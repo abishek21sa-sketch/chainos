@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@v6
       - name: Validate fixture and static assets
         run: npm test
+      # One-time repository setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload site artifact

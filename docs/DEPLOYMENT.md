@@ -14,8 +14,9 @@ Use Render if the project is about to grow a backend. The checked-in `render.yam
 
 1. Create a GitHub repository and copy the contents of this `chainos` folder into its repository root.
 2. Commit and push the default branch as `main`.
-3. Enable GitHub Pages using GitHub Actions as the publishing source.
-4. Wait for `Deploy ChainOS to GitHub Pages` to complete; the workflow exposes the live URL through the Pages environment.
+3. In the repository, open **Settings → Pages → Build and deployment → Source** and select **GitHub Actions**. This one-time step initializes the Pages site; otherwise `actions/configure-pages` returns a 404 “Get Pages site failed” error.
+4. Re-run `Deploy ChainOS to GitHub Pages` from the Actions tab, or push another commit.
+5. Wait for the workflow to complete; it exposes the live URL through the Pages environment.
 
 ## Vercel setup
 
