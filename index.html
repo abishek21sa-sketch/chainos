@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="guide.css" />
     <link rel="stylesheet" href="date-window.css" />
     <link rel="stylesheet" href="assumptions.css" />
+    <link rel="stylesheet" href="activity.css" />
   </head>
   <body>
     <div class="app-shell">
@@ -63,7 +64,7 @@
       <main class="main-content">
         <header class="topbar">
           <div class="breadcrumbs"><span>Northstar Mobility</span><b>/</b><strong>Control tower</strong></div>
-          <div class="top-actions"><button class="sync-status" id="sync-status"><i></i> <span id="sync-label">Synced 2 min ago</span></button><button class="icon-button" aria-label="Notifications">♢<span class="notification-dot"></span></button><button class="date-button" id="date-window-button">Sep 16 — Sep 22, 2025 <span>⌄</span></button></div>
+          <div class="top-actions"><button class="sync-status" id="sync-status"><i></i> <span id="sync-label">Synced 2 min ago</span></button><button class="icon-button" id="notification-button" aria-label="Notifications">♢<span class="notification-dot"></span></button><button class="date-button" id="date-window-button">Sep 16 — Sep 22, 2025 <span>⌄</span></button></div>
           <div class="sync-popover" id="sync-popover" aria-hidden="true"><div class="sync-popover-head"><div><div class="view-kicker">DATA HEALTH</div><strong>Fixture sync complete</strong></div><span class="sync-check">✓</span></div><div class="sync-detail"><span>Last planning run</span><b>9:42 AM</b></div><div class="sync-detail"><span>Signals evaluated</span><b>27</b></div><div class="sync-detail"><span>Suppliers / POs</span><b id="sync-supplier-count">3 / 2</b></div><div class="sync-detail"><span>Data as of</span><b id="sync-as-of">Sep 16, 2025</b></div><div class="sync-popover-foot">Source: Northstar Mobility fixture</div></div><div class="date-window-popover" id="date-window-popover" aria-hidden="true"><button class="date-window-option" data-planning-window="7">7-day window</button><button class="date-window-option" data-planning-window="14">14-day window</button><button class="date-window-option" data-planning-window="30">30-day window</button></div>
         </header>
 
@@ -131,5 +132,6 @@
     <script src="hash-nav.js"></script>
     <script src="date-window.js"></script>
     <script src="assumptions.js"></script>
+    <script src="activity.js"></script>
   </body>
 </html>
