@@ -145,7 +145,7 @@ document.getElementById('scenario-cancel').addEventListener('click', closeScenar
 document.getElementById('scenario-run').addEventListener('click', runScenario);
 scenarioBackdrop.addEventListener('click', closeScenario);
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeScenario(); });
-document.querySelector('.icon-button').addEventListener('click', () => showDrawer('shortage'));
+document.querySelector('.icon-button:not(#notification-button)').addEventListener('click', () => showDrawer('shortage'));
 document.querySelector('.network-panel .text-button').addEventListener('click', () => showToast('Network view is anchored on the active Austin constraint.'));
 
 const viewCopy = {
