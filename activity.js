@@ -12,6 +12,11 @@
     try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch (error) { return []; }
   }
   function writeActivity(entries) { localStorage.setItem(storageKey, JSON.stringify(entries.slice(0, 8))); }
+  function recordActivity(label) {
+    const entries = readActivity();
+    entries.unshift({ label, time: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) });
+    writeActivity(entries);
+  }
   function renderActivity() {
     const entries = readActivity();
     list.innerHTML = entries.length ? entries.map((entry) => `<div class="activity-item"><span class="activity-icon">✓</span><div><strong>${entry.label}</strong><small>${entry.time}</small></div><span class="activity-status">Queued</span></div>`).join('') : '<div class="activity-empty"><strong>No queued decisions yet</strong><span>Accept a recommendation or queue a request to start the local trail.</span></div>';
@@ -27,8 +32,7 @@
     const action = event.target.closest('#accept-action, #drawer-action');
     if (!action || action.disabled) return;
     const label = action.id === 'accept-action' ? 'Expedite PO-8421 recommendation' : action.textContent.replace('→', '').trim();
-    const entries = readActivity();
-    entries.unshift({ label, time: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) });
-    writeActivity(entries);
+    recordActivity(label);
   });
+  document.addEventListener('chainos:activity', (event) => { if (event.detail?.label) recordActivity(event.detail.label); });
 }());

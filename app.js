@@ -42,9 +42,28 @@ syncStatus.addEventListener('click', toggleSyncPopover);
 document.addEventListener('click', (event) => { if (!syncPopover.contains(event.target) && !syncStatus.contains(event.target)) { syncPopover.classList.remove('open'); syncPopover.setAttribute('aria-hidden', 'true'); } });
 const scenarioModal = document.getElementById('scenario-modal');
 const scenarioBackdrop = document.getElementById('scenario-backdrop');
-function openScenario() { scenarioModal.classList.add('open'); scenarioModal.setAttribute('aria-hidden', 'false'); scenarioBackdrop.classList.add('show'); }
+let scenarioReady = false;
+function openScenario() {
+  scenarioReady = false;
+  document.querySelector('.scenario-modal-intro').textContent = 'Compare one planner move against the current baseline before committing it.';
+  document.getElementById('scenario-run').innerHTML = 'Run preview <span>→</span>';
+  scenarioModal.classList.add('open'); scenarioModal.setAttribute('aria-hidden', 'false'); scenarioBackdrop.classList.add('show');
+}
 function closeScenario() { scenarioModal.classList.remove('open'); scenarioModal.setAttribute('aria-hidden', 'true'); scenarioBackdrop.classList.remove('show'); }
-function runScenario() { closeScenario(); showToast('Preview complete: 3.8 days cover and 18.4 hours protected.'); }
+function runScenario() {
+  if (!scenarioReady) {
+    scenarioReady = true;
+    document.querySelector('.scenario-modal-intro').textContent = 'Preview complete. Review the impact, then queue this plan for planner review.';
+    document.getElementById('scenario-run').innerHTML = 'Queue plan <span>✓</span>';
+    showToast('Preview complete: 3.8 days cover and 18.4 hours protected.');
+    return;
+  }
+  scenarioReady = false;
+  sessionStorage.setItem('chainos-scenario-status', 'queued');
+  document.dispatchEvent(new CustomEvent('chainos:activity', { detail: { label: 'Scenario plan · Expedite PO-8421' } }));
+  closeScenario();
+  showToast('Scenario plan queued for planner review.');
+}
 
 async function loadFixture() {
   const syncLabel = document.getElementById('sync-label');
