@@ -15,6 +15,7 @@ fixtures.healthy = { kicker: 'HEALTHY FLOW', title: 'Vektor Plastics on schedule
 function showDrawer(type = 'shortage') {
   const item = fixtures[type] || fixtures.shortage;
   activeDrawerType = type;
+  document.dispatchEvent(new CustomEvent('chainos:drawer-open', { detail: { type } }));
   document.getElementById('drawer-kicker').textContent = item.kicker;
   document.getElementById('drawer-title').textContent = item.title;
   document.getElementById('drawer-intro').textContent = item.intro;
