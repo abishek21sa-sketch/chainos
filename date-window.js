@@ -2,6 +2,7 @@
   const button = document.getElementById('date-window-button');
   const popover = document.getElementById('date-window-popover');
   const options = Array.from(document.querySelectorAll('[data-planning-window]'));
+  const outlookFilter = document.querySelector('.coverage-panel .panel-filter');
   if (!button || !popover || !options.length) return;
 
   const windows = {
@@ -18,6 +19,7 @@
   function setWindow(days, announce = true) {
     const selectedDays = String(days);
     button.innerHTML = `${windows[selectedDays] || windows[7]} <span>⌄</span>`;
+    if (outlookFilter) outlookFilter.innerHTML = `Next ${selectedDays} days <span>⌄</span>`;
     options.forEach((option) => option.classList.toggle('selected', option.dataset.planningWindow === selectedDays));
     sessionStorage.setItem('chainos-planning-window', selectedDays);
     closePopover();
