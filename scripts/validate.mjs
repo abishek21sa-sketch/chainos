@@ -2,14 +2,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = process.cwd();
-const requiredFiles = ['index.html', 'styles.css', 'views.css', 'state.css', 'trace.css', 'scenario.css', 'interaction.css', 'status.css', 'status-state.css', 'queue.css', 'app.js', 'data/fixture.json', 'favicon.svg', 'site.webmanifest', 'robots.txt'];
+const requiredFiles = ['index.html', 'styles.css', 'views.css', 'state.css', 'trace.css', 'scenario.css', 'interaction.css', 'status.css', 'status-state.css', 'queue.css', 'guide.css', 'guide.js', 'export.js', 'hash-nav.js', 'date-window.css', 'date-window.js', 'app.js', 'data/fixture.json', 'favicon.svg', 'site.webmanifest', 'robots.txt'];
 for (const file of requiredFiles) {
   if (!existsSync(join(root, file))) throw new Error(`Missing required file: ${file}`);
 }
 
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 const fixture = JSON.parse(readFileSync(join(root, 'data/fixture.json'), 'utf8'));
-const requiredMarkup = ['detail-drawer', 'secondary-view', 'scenario-modal', 'sync-popover', 'queue-filters'];
+const requiredMarkup = ['detail-drawer', 'secondary-view', 'scenario-modal', 'sync-popover', 'queue-filters', 'command-guide', 'date-window-popover', 'date-window-button'];
 for (const marker of requiredMarkup) {
   if (!html.includes(marker)) throw new Error(`Missing required markup: ${marker}`);
 }
