@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#09111f" />
+    <meta name="description" content="ChainOS supply control tower — a Phase 1 portfolio prototype for materials, logistics, and supplier-risk planning." />
+    <meta property="og:title" content="ChainOS — Supply Control Tower" />
+    <meta property="og:description" content="Trace material risk from supplier commitment to affected production." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="site.webmanifest" />
+    <title>ChainOS — Supply Control Tower</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="views.css" />
+    <link rel="stylesheet" href="state.css" />
+    <link rel="stylesheet" href="trace.css" />
+    <link rel="stylesheet" href="scenario.css" />
+    <link rel="stylesheet" href="interaction.css" />
+    <link rel="stylesheet" href="status.css" />
+    <link rel="stylesheet" href="status-state.css" />
+    <link rel="stylesheet" href="queue.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-lockup">
+          <div class="brand-mark"><span></span><span></span><span></span></div>
+          <div><div class="brand-name">CHAIN<span>OS</span></div><div class="brand-subtitle">Supply intelligence</div></div>
+        </div>
+
+        <div class="workspace-switcher">
+          <div class="workspace-dot"></div>
+          <div class="workspace-copy"><strong>Northstar Mobility</strong><span>Planning workspace</span></div>
+          <span class="chevron">⌄</span>
+        </div>
+
+        <nav class="primary-nav" aria-label="Primary navigation">
+          <div class="nav-label">Control center</div>
+          <button class="nav-item active" data-view="overview"><span class="nav-icon">◒</span>Overview</button>
+          <button class="nav-item" data-view="materials"><span class="nav-icon">◇</span>Materials <em>4</em></button>
+          <button class="nav-item" data-view="suppliers"><span class="nav-icon">⌁</span>Suppliers</button>
+          <button class="nav-item" data-view="purchase-orders"><span class="nav-icon">▤</span>Purchase orders <em class="muted-count">12</em></button>
+          <button class="nav-item" data-view="logistics"><span class="nav-icon">→</span>Logistics</button>
+          <button class="nav-item" data-view="inventory"><span class="nav-icon">▥</span>Inventory</button>
+          <div class="nav-label second">Planning</div>
+          <button class="nav-item" data-view="constraints"><span class="nav-icon">⊘</span>Constraints</button>
+          <button class="nav-item" data-view="scenarios"><span class="nav-icon">✧</span>Scenarios <span class="beta-pill">BETA</span></button>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <button class="help-link"><span class="nav-icon">?</span>Command guide</button>
+          <div class="user-card"><div class="avatar">AL</div><div><strong>Alex Lee</strong><span>Supply planner</span></div><span class="more">•••</span></div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Northstar Mobility</span><b>/</b><strong>Control tower</strong></div>
+          <div class="top-actions"><button class="sync-status" id="sync-status"><i></i> <span id="sync-label">Synced 2 min ago</span></button><button class="icon-button" aria-label="Notifications">♢<span class="notification-dot"></span></button><button class="date-button">Sep 16 — Sep 22, 2025 <span>⌄</span></button></div>
+          <div class="sync-popover" id="sync-popover" aria-hidden="true"><div class="sync-popover-head"><div><div class="view-kicker">DATA HEALTH</div><strong>Fixture sync complete</strong></div><span class="sync-check">✓</span></div><div class="sync-detail"><span>Last planning run</span><b>9:42 AM</b></div><div class="sync-detail"><span>Signals evaluated</span><b>27</b></div><div class="sync-detail"><span>Suppliers / POs</span><b id="sync-supplier-count">3 / 2</b></div><div class="sync-detail"><span>Data as of</span><b id="sync-as-of">Sep 16, 2025</b></div><div class="sync-popover-foot">Source: Northstar Mobility fixture</div></div>
+        </header>
+
+        <div class="page-content">
+          <section class="hero-row">
+            <div><div class="eyebrow"><span class="live-dot"></span>Monday, September 16, 2025 <span class="eyebrow-separator">·</span> Week 38</div><h1 id="page-title">Good morning, Alex<span class="title-period">.</span></h1><p class="hero-subtitle" id="page-subtitle">Here’s the network picture. One decision needs your attention.</p></div>
+            <button class="primary-button" id="scenario-button"><span>＋</span> New scenario</button>
+          </section>
+
+          <section class="metric-grid" aria-label="Network metrics">
+            <article class="metric-card accent-coral"><div class="metric-top"><span class="metric-label">At-risk materials</span><span class="metric-icon">△</span></div><div class="metric-value" id="risk-count">04</div><div class="metric-foot"><span class="trend down">↑ 1</span><span>since yesterday</span></div></article>
+            <article class="metric-card accent-amber"><div class="metric-top"><span class="metric-label">Production exposure</span><span class="metric-icon">◌</span></div><div class="metric-value">18.4<span class="metric-unit">hrs</span></div><div class="metric-foot"><span class="trend neutral">→ 0.0</span><span>since yesterday</span></div></article>
+            <article class="metric-card accent-blue"><div class="metric-top"><span class="metric-label">Inbound late</span><span class="metric-icon">↗</span></div><div class="metric-value">07</div><div class="metric-foot"><span class="trend up">↓ 2</span><span>since yesterday</span></div></article>
+            <article class="metric-card accent-mint"><div class="metric-top"><span class="metric-label">Network cover</span><span class="metric-icon">◴</span></div><div class="metric-value">9.6<span class="metric-unit"> days</span></div><div class="metric-foot"><span class="trend up">↑ 0.8</span><span>since yesterday</span></div></article>
+          </section>
+
+          <section class="dashboard-grid">
+            <article class="panel network-panel">
+              <div class="panel-header"><div><div class="panel-kicker">Network pulse</div><h2>Material flow health</h2></div><button class="text-button">View network <span>→</span></button></div>
+              <div class="network-visual" aria-label="Supply network from suppliers through transit to plants">
+                <div class="network-stage supplier-stage"><div class="stage-label">SUPPLIERS <span>03</span></div><div class="node-stack"><div class="network-node compact"><span class="node-status good"></span><div><strong>Apex Metals</strong><small>2 active POs</small></div><b>98%</b></div><div class="network-node compact node-warning"><span class="node-status warn"></span><div><strong>Nordic Circuits</strong><small>1 late shipment</small></div><b>71%</b></div><div class="network-node compact"><span class="node-status good"></span><div><strong>Vektor Plastics</strong><small>On schedule</small></div><b>94%</b></div></div></div>
+                <div class="flow-lines"><span class="flow-line line-a"></span><span class="flow-line line-b warning-line"></span><span class="flow-line line-c"></span><div class="flow-badge">3 lanes</div></div>
+                <div class="network-stage plant-stage"><div class="stage-label">PLANTS <span>02</span></div><div class="node-stack"><div class="network-node plant-node"><span class="plant-glyph">N</span><div><strong>Northstar · Austin</strong><small>EV platform assembly</small></div><b class="plant-health">86%</b></div><div class="network-node plant-node"><span class="plant-glyph slate">R</span><div><strong>Northstar · Reno</strong><small>Power systems</small></div><b class="plant-health">100%</b></div></div></div>
+              </div>
+              <div class="network-legend"><span><i class="legend-dot green"></i>Healthy flow</span><span><i class="legend-dot amber"></i>Watch lane</span><span><i class="legend-dot red"></i>Action needed</span><span class="legend-note">Updated from 27 signals</span></div>
+            </article>
+
+            <article class="panel attention-panel">
+              <div class="panel-header"><div><div class="panel-kicker coral-text">Needs attention</div><h2>Planner queue <span class="queue-count">02</span></h2></div><button class="more-button">•••</button></div>
+              <div class="queue-filters" role="group" aria-label="Filter planner queue"><button class="queue-filter active" data-queue-filter="all">All <span>06</span></button><button class="queue-filter" data-queue-filter="critical">Critical <span>02</span></button><button class="queue-filter" data-queue-filter="inbound">Inbound <span>03</span></button></div><div class="queue-list">
+                <button class="queue-item critical" data-open-drawer="shortage"><div class="queue-status"><span class="status-icon">!</span><span>Critical</span><time>2h ago</time></div><strong>Inverter housing shortage</strong><p>May stop Austin line 2 in <b>1.8 days</b></p><div class="queue-meta"><span>MAT-2048</span><span>·</span><span>PO-8421</span><span class="arrow">→</span></div></button>
+                <button class="queue-item warning" data-open-drawer="late"><div class="queue-status"><span class="status-icon">↗</span><span>At risk</span><time>5h ago</time></div><strong>Nordic Circuits shipment late</strong><p>ETA slipped from Sep 17 to <b>Sep 19</b></p><div class="queue-meta"><span>PO-8398</span><span>·</span><span>Air freight</span><span class="arrow">→</span></div></button>
+              </div>
+              <button class="queue-footer" id="view-queue">View all 6 signals <span>→</span></button>
+            </article>
+
+            <article class="panel coverage-panel">
+              <div class="panel-header"><div><div class="panel-kicker">Capacity outlook</div><h2>Days of supply</h2></div><div class="panel-filter">Next 14 days <span>⌄</span></div></div>
+              <div class="chart-wrap"><div class="chart-y-labels"><span>20d</span><span>15d</span><span>10d</span><span>5d</span><span>0d</span></div><div class="chart-area"><div class="grid-line g1"></div><div class="grid-line g2"></div><div class="grid-line g3"></div><div class="grid-line g4"></div><div class="grid-line g5"></div><div class="chart-bars"><div class="bar-group"><div class="bar safe" style="height: 74%"></div><span>W38</span></div><div class="bar-group"><div class="bar safe" style="height: 62%"></div><span>W39</span></div><div class="bar-group"><div class="bar warning" style="height: 42%"></div><span>W40</span></div><div class="bar-group"><div class="bar critical" style="height: 25%"></div><span>W41</span></div><div class="bar-group"><div class="bar warning" style="height: 35%"></div><span>W42</span></div><div class="bar-group"><div class="bar safe" style="height: 58%"></div><span>W43</span></div><div class="bar-group"><div class="bar safe" style="height: 78%"></div><span>W44</span></div></div><div class="target-line"><span>Safety floor</span></div></div></div>
+              <div class="coverage-foot"><span><i class="legend-dot green"></i>Above safety floor</span><span><i class="legend-dot amber"></i>Below safety floor</span><strong>Next breach in 1.8 days</strong></div>
+            </article>
+
+            <article class="panel action-panel">
+              <div class="panel-header"><div><div class="panel-kicker mint-text">Recommended action</div><h2>Protect Austin line 2</h2></div><span class="recommendation-badge">94% fit</span></div>
+              <div class="recommendation-body"><div class="recommendation-icon">↯</div><div><p>Expedite <strong>PO-8421</strong> by air from Apex Metals. Pulling in 480 housings by 1 day keeps the line above its 2-day safety floor.</p><div class="recommendation-impact"><span><small>Cost delta</small><b>+$4,280</b></span><span><small>Line protected</small><b>18.4 hrs</b></span><span><small>Decision by</small><b>Today, 2:00p</b></span></div></div></div>
+              <div class="action-buttons"><button class="primary-button small" id="accept-action">Accept recommendation <span>→</span></button><button class="secondary-button small" id="inspect-action">Inspect impact</button></div>
+            </article>
+          </section>
+
+          <section class="bottom-strip"><div class="strip-item"><span class="strip-icon">⌁</span><div><small>Next inbound</small><strong>3 shipments arriving today</strong></div><span class="strip-arrow">→</span></div><div class="strip-divider"></div><div class="strip-item"><span class="strip-icon">◫</span><div><small>Open commitments</small><strong>12 POs need confirmation</strong></div><span class="strip-arrow">→</span></div><div class="strip-divider"></div><div class="strip-item"><span class="strip-icon">✦</span><div><small>Last planning run</small><strong>9:42 AM · 27 signals evaluated</strong></div><span class="strip-arrow">↻</span></div></section>
+          <section class="secondary-view hidden" id="secondary-view" aria-live="polite"></section>
+          <div class="footer-note"><span>ChainOS Phase 1 · Control tower foundation</span><span>Fixture: Northstar Mobility / Week 38</span></div>
+        </div>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status"><span class="toast-check">✓</span><span id="toast-copy">Recommendation accepted. PO-8421 is queued for expediting.</span></div>
+    <div class="drawer-backdrop" id="drawer-backdrop"></div>
+    <aside class="detail-drawer" id="detail-drawer" aria-hidden="true"><button class="drawer-close" id="drawer-close" aria-label="Close detail">×</button><div class="drawer-kicker" id="drawer-kicker">CRITICAL MATERIAL</div><h2 id="drawer-title">Inverter housing shortage</h2><p id="drawer-intro">A constrained component is projected to interrupt production at Northstar Austin.</p><div class="drawer-divider"></div><div class="drawer-section"><div class="drawer-label">Material signal</div><div class="signal-row"><span id="drawer-material">MAT-2048 · Inverter housing</span><b class="critical-text" id="drawer-dos">1.8 days cover</b></div><div class="mini-progress"><span id="drawer-progress" style="width: 28%"></span></div><div class="signal-row muted-row"><span>Safety floor</span><span id="drawer-floor">2.0 days</span></div></div><div class="drawer-section"><div class="drawer-label">Affected production</div><div class="affected-card"><div class="affected-line"><span class="plant-glyph">N</span><div><strong id="drawer-plant">Austin · Assembly line 2</strong><small id="drawer-line-detail">EV platform / 240 units per shift</small></div></div><b id="drawer-hours">18.4 hrs</b></div></div><div class="drawer-section"><div class="drawer-label">Trace to source</div><div class="trace-list" id="drawer-trace"><div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Apex Metals confirmed</strong><small>PO-8421 · 1,200 housings</small></div><time>Sep 12</time></div><div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Shipment in transit</strong><small>SHP-8421 · truck · ETA Sep 18</small></div><time>Sep 15</time></div><div class="trace-item alert"><span class="trace-dot">!</span><div><strong>Safety floor breach projected</strong><small>MAT-2048 · Austin line 2</small></div><time>Today</time></div><div class="trace-item proposed"><span class="trace-dot">↯</span><div><strong>Expedite available</strong><small>Air freight · +$4,280 estimate</small></div><time>Next</time></div></div></div><div class="drawer-section"><div class="drawer-label">Suggested move</div><div class="suggestion-card"><div class="suggestion-icon">↯</div><div><strong id="drawer-suggestion-title">Expedite PO-8421</strong><p id="drawer-suggestion-copy">Air freight 480 housings from Apex Metals. Keeps coverage above safety floor.</p></div></div></div><button class="primary-button drawer-action" id="drawer-action">Queue expedite request <span>→</span></button></aside>
+    <div class="scenario-modal-backdrop" id="scenario-backdrop"></div><section class="scenario-modal" id="scenario-modal" aria-hidden="true" role="dialog" aria-labelledby="scenario-modal-title"><button class="drawer-close" id="scenario-close" aria-label="Close scenario">×</button><div class="drawer-kicker">SCENARIO PREVIEW · BETA</div><h2 id="scenario-modal-title">Protect Austin line 2</h2><p class="scenario-modal-intro">Compare one planner move against the current baseline before committing it.</p><div class="scenario-option selected"><span class="option-radio">✓</span><div><strong>Expedite PO-8421 by air</strong><small>480 inverter housings · Apex Metals</small></div><b>Recommended</b></div><div class="scenario-result"><div><small>Projected cover</small><strong>3.8 days</strong><span class="positive">+2.0 days</span></div><div><small>Line protected</small><strong>18.4 hrs</strong><span class="positive">Recovered</span></div><div><small>Cost delta</small><strong>+$4,280</strong><span class="neutral">Estimate</span></div></div><div class="scenario-modal-note"><span>i</span><p>This preview uses the Phase 1 fixture and transparent heuristic assumptions. It does not reserve capacity or send a supplier request.</p></div><div class="scenario-modal-actions"><button class="secondary-button small" id="scenario-cancel">Keep baseline</button><button class="primary-button small" id="scenario-run">Run preview <span>→</span></button></div></section>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,1 @@
+.network-node[role=button]{cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s}.network-node[role=button]:hover,.network-node[role=button]:focus-visible{transform:translateY(-2px);border-color:#acd9c9;box-shadow:0 6px 15px rgba(36,104,87,.1);outline:none}.network-node[role=button]:focus-visible{box-shadow:0 0 0 3px rgba(89,181,151,.22)}

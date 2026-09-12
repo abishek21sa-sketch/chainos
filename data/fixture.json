@@ -1,0 +1,47 @@
+{
+  "workspace": "Northstar Mobility",
+  "asOf": "2025-09-16T09:42:00-05:00",
+  "parts": [
+    { "id": "PART-MAT-2048", "partNumber": "MAT-2048", "name": "Inverter housing", "unit": "ea", "criticality": "critical" },
+    { "id": "PART-VCU-1190", "partNumber": "VCU-1190", "name": "Vehicle control unit", "unit": "ea", "criticality": "high" }
+  ],
+  "boms": [
+    { "id": "BOM-VCU-1190", "parentPartId": "PART-VCU-1190", "componentPartId": "PART-MAT-2048", "quantityPer": 1, "operation": "inverter assembly" }
+  ],
+  "suppliers": [
+    { "id": "SUP-APEX-01", "name": "Apex Metals", "region": "US South", "reliabilityScore": 98, "status": "healthy" },
+    { "id": "SUP-NORDIC-02", "name": "Nordic Circuits", "region": "Midwest", "reliabilityScore": 71, "status": "watch" },
+    { "id": "SUP-VEKTOR-03", "name": "Vektor Plastics", "region": "US West", "reliabilityScore": 94, "status": "healthy" }
+  ],
+  "purchaseOrders": [
+    { "id": "PO-8421", "supplierId": "SUP-APEX-01", "partId": "PART-MAT-2048", "quantity": 1200, "dueDate": "2025-09-18", "status": "open" },
+    { "id": "PO-8398", "supplierId": "SUP-NORDIC-02", "partId": "PART-VCU-1190", "quantity": 600, "dueDate": "2025-09-17", "status": "at-risk" }
+  ],
+  "shipments": [
+    { "id": "SHP-8421", "purchaseOrderId": "PO-8421", "mode": "truck", "origin": "Apex Metals / Birmingham", "destination": "Northstar Austin", "eta": "2025-09-18", "status": "in-transit" },
+    { "id": "SHP-8398", "purchaseOrderId": "PO-8398", "mode": "air", "origin": "Nordic Circuits / Chicago", "destination": "Northstar Austin", "eta": "2025-09-19", "status": "late" }
+  ],
+  "plants": [
+    { "id": "PLANT-AUS-01", "name": "Northstar Austin", "region": "US South", "lines": [{ "id": "LINE-AUS-02", "name": "Assembly line 2", "unitsPerShift": 240 }] },
+    { "id": "PLANT-REN-02", "name": "Northstar Reno", "region": "US West", "lines": [{ "id": "LINE-REN-01", "name": "Power systems", "unitsPerShift": 180 }] }
+  ],
+  "inventoryPositions": [
+    { "plantId": "PLANT-AUS-01", "partId": "PART-MAT-2048", "onHand": 480, "allocated": 48, "safetyStock": 480, "asOf": "2025-09-16" }
+  ],
+  "demandSignals": [
+    { "plantId": "PLANT-AUS-01", "partId": "PART-MAT-2048", "period": "2025-09-16/2025-09-17", "quantity": 432, "source": "production plan" }
+  ],
+  "leadTimes": [
+    { "supplierId": "SUP-APEX-01", "partId": "PART-MAT-2048", "mode": "truck", "nominalDays": 3, "p95Days": 5 },
+    { "supplierId": "SUP-APEX-01", "partId": "PART-MAT-2048", "mode": "air", "nominalDays": 1, "p95Days": 2 }
+  ],
+  "shortages": [
+    { "id": "SHORT-2048-AUS", "partId": "PART-MAT-2048", "plantId": "PLANT-AUS-01", "breachAt": "2025-09-18T04:00:00-05:00", "daysOfSupply": 1.8, "severity": "critical", "affectedHours": 18.4 }
+  ],
+  "constraints": [
+    { "id": "CON-AUS-L2", "scope": "LINE-AUS-02", "type": "material", "capacity": 480, "consumed": 432, "window": "2025-09-16/2025-09-18" }
+  ],
+  "plannerActions": [
+    { "id": "ACT-EXPEDITE-8421", "shortageId": "SHORT-2048-AUS", "type": "expedite", "costDelta": 4280, "impactHours": 18.4, "status": "proposed" }
+  ]
+}

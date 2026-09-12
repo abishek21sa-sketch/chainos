@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: chainos-control-tower
+    runtime: static
+    buildCommand: npm test
+    staticPublishPath: .

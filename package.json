@@ -1,0 +1,9 @@
+{
+  "name": "chainos-control-tower",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone ChainOS Phase 1 supply control tower",
+  "scripts": {
+    "test": "node scripts/validate.mjs"
+  }
+}

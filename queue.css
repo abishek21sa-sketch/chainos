@@ -1,0 +1,1 @@
+.queue-filters{display:flex;gap:5px;margin-top:15px}.queue-filter{font-family:var(--mono);font-size:8px;color:#8c99a7;border:1px solid #e5ebf0;border-radius:4px;padding:5px 7px}.queue-filter span{color:#aab4bf;margin-left:3px}.queue-filter.active{color:#4c9b82;background:#eef8f3;border-color:#cfe9dd}.queue-filter.active span{color:#4c9b82}.queue-filter:hover{border-color:#bcdccd}
