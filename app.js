@@ -95,6 +95,28 @@ async function loadFixture() {
   }
 }
 
+document.addEventListener('chainos:fixture-import', (event) => {
+  const fixture = event.detail?.fixture;
+  if (!fixture) return;
+  activeFixture = fixture;
+  document.getElementById('sync-label').textContent = `Imported ${event.detail.fileName || 'fixture'}`;
+  syncStatus.classList.remove('fallback');
+  const shortages = fixture.shortages || [];
+  document.getElementById('sync-supplier-count').textContent = `${(fixture.suppliers || []).length} / ${(fixture.purchaseOrders || []).length}`;
+  if (fixture.asOf) document.getElementById('sync-as-of').textContent = new Date(fixture.asOf).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  document.getElementById('risk-count').textContent = String(shortages.length).padStart(2, '0');
+  const primaryShortage = shortages[0];
+  if (primaryShortage) {
+    document.getElementById('drawer-dos').textContent = `${primaryShortage.daysOfSupply} days cover`;
+    document.getElementById('drawer-hours').textContent = `${primaryShortage.affectedHours} hrs`;
+  }
+  const footer = document.querySelector('.footer-note span');
+  if (footer && fixture.workspace) footer.textContent = `ChainOS Phase 2 · ${fixture.workspace} import`;
+  const activeView = document.querySelector('.nav-item.active')?.dataset.view;
+  if (activeView && activeView !== 'overview') renderView(activeView);
+  showToast(`Imported ${event.detail.fileName || 'fixture'} — ${fixture.suppliers.length} suppliers, ${fixture.purchaseOrders.length} POs.`);
+});
+
 document.querySelectorAll('[data-open-drawer]').forEach((button) => button.addEventListener('click', () => showDrawer(button.dataset.openDrawer)));
 document.querySelectorAll('.network-node').forEach((node) => {
   const nodeName = node.querySelector('strong')?.textContent || '';

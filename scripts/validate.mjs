@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const root = process.cwd();
-const requiredFiles = ['index.html', 'styles.css', 'views.css', 'state.css', 'trace.css', 'scenario.css', 'interaction.css', 'status.css', 'status-state.css', 'queue.css', 'guide.css', 'guide.js', 'export.js', 'hash-nav.js', 'date-window.css', 'date-window.js', 'assumptions.css', 'assumptions.js', 'activity.css', 'activity.js', 'supplier-detail.css', 'supplier-detail.js', 'po-detail.css', 'po-detail.js', 'material-detail.css', 'material-detail.js', 'app.js', 'data/fixture.json', 'favicon.svg', 'site.webmanifest', 'robots.txt'];
+const requiredFiles = ['index.html', 'styles.css', 'views.css', 'state.css', 'trace.css', 'scenario.css', 'interaction.css', 'status.css', 'status-state.css', 'queue.css', 'guide.css', 'guide.js', 'export.js', 'hash-nav.js', 'date-window.css', 'date-window.js', 'assumptions.css', 'assumptions.js', 'activity.css', 'activity.js', 'supplier-detail.css', 'supplier-detail.js', 'po-detail.css', 'po-detail.js', 'material-detail.css', 'material-detail.js', 'fixture-import.css', 'fixture-import.js', 'app.js', 'data/fixture.json', 'favicon.svg', 'site.webmanifest', 'robots.txt'];
 for (const file of requiredFiles) {
   if (!existsSync(join(root, file))) throw new Error(`Missing required file: ${file}`);
 }
