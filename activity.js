@@ -1,5 +1,5 @@
 (function () {
-  document.body.insertAdjacentHTML('beforeend', '<div class="activity-backdrop" id="activity-backdrop"></div><section class="activity-panel" id="activity-panel" aria-hidden="true" role="dialog" aria-labelledby="activity-title"><button class="activity-close" id="activity-close" aria-label="Close planner activity">×</button><div class="drawer-kicker">PLANNER ACTIVITY</div><h2 id="activity-title">Recent decisions</h2><p class="activity-intro">A local review trail for actions queued in this browser.</p><div class="activity-list" id="activity-list"></div><div class="activity-foot">Stored locally for this demo session · no requests sent</div></section>');
+  document.body.insertAdjacentHTML('beforeend', '<div class="activity-backdrop" id="activity-backdrop"></div><section class="activity-panel" id="activity-panel" aria-hidden="true" role="dialog" aria-labelledby="activity-title"><button class="activity-close" id="activity-close" aria-label="Close planner activity">×</button><div class="drawer-kicker">PLANNER ACTIVITY</div><h2 id="activity-title">Recent decisions</h2><p class="activity-intro">A local review trail for actions queued in this browser. Click a status to mark it reviewed.</p><div class="activity-list" id="activity-list"></div><div class="activity-foot">Stored locally for this demo session · no requests sent</div></section>');
   const panel = document.getElementById('activity-panel');
   const backdrop = document.getElementById('activity-backdrop');
   const list = document.getElementById('activity-list');
@@ -14,12 +14,12 @@
   function writeActivity(entries) { localStorage.setItem(storageKey, JSON.stringify(entries.slice(0, 8))); }
   function recordActivity(label) {
     const entries = readActivity();
-    entries.unshift({ label, time: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) });
+    entries.unshift({ label, status: 'Queued', time: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) });
     writeActivity(entries);
   }
   function renderActivity() {
     const entries = readActivity();
-    list.innerHTML = entries.length ? entries.map((entry) => `<div class="activity-item"><span class="activity-icon">✓</span><div><strong>${entry.label}</strong><small>${entry.time}</small></div><span class="activity-status">Queued</span></div>`).join('') : '<div class="activity-empty"><strong>No queued decisions yet</strong><span>Accept a recommendation or queue a request to start the local trail.</span></div>';
+    list.innerHTML = entries.length ? entries.map((entry, index) => `<div class="activity-item"><span class="activity-icon">✓</span><div><strong>${entry.label}</strong><small>${entry.time}</small></div><button class="activity-status ${entry.status === 'Reviewed' ? 'reviewed' : ''}" data-activity-index="${index}" type="button">${entry.status || 'Queued'}</button></div>`).join('') : '<div class="activity-empty"><strong>No queued decisions yet</strong><span>Accept a recommendation or queue a request to start the local trail.</span></div>';
   }
   function open() { renderActivity(); panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); backdrop.classList.add('show'); }
   function close() { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); backdrop.classList.remove('show'); }
@@ -28,6 +28,16 @@
   closeButton.addEventListener('click', close);
   backdrop.addEventListener('click', close);
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
+  list.addEventListener('click', (event) => {
+    const statusButton = event.target.closest('[data-activity-index]');
+    if (!statusButton) return;
+    const entries = readActivity();
+    const index = Number(statusButton.dataset.activityIndex);
+    if (!entries[index]) return;
+    entries[index].status = entries[index].status === 'Reviewed' ? 'Queued' : 'Reviewed';
+    writeActivity(entries); renderActivity();
+    showToast(entries[index].status === 'Reviewed' ? 'Activity marked reviewed.' : 'Activity returned to the queue.');
+  });
   document.addEventListener('click', (event) => {
     const action = event.target.closest('#accept-action, #drawer-action');
     if (!action || action.disabled) return;
