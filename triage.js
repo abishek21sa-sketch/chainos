@@ -2,6 +2,7 @@
   const host = document.getElementById('secondary-view');
   if (!host) return;
   let fixture = null;
+  try { fixture = JSON.parse(sessionStorage.getItem('chainos-imported-fixture') || 'null'); } catch (error) { sessionStorage.removeItem('chainos-imported-fixture'); }
   const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
   function active() { return document.querySelector('.nav-item.active')?.dataset.view === 'constraints'; }
   function render(data) {
@@ -24,6 +25,7 @@
     });
   }
   async function load() {
+    if (fixture) { render(fixture); return; }
     try { fixture = await (await fetch('data/fixture.json')).json(); render(fixture); } catch (error) { console.info('Triage view using inline data.', error.message); }
   }
   document.addEventListener('chainos:fixture-import', (event) => { fixture = event.detail?.fixture || fixture; render(fixture); });

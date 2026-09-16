@@ -69,6 +69,15 @@ function runScenario() {
 async function loadFixture() {
   const syncLabel = document.getElementById('sync-label');
   syncLabel.textContent = 'Loading fixture…';
+  const persistedImport = sessionStorage.getItem('chainos-imported-fixture');
+  if (persistedImport) {
+    try {
+      document.dispatchEvent(new CustomEvent('chainos:fixture-import', { detail: { fixture: JSON.parse(persistedImport), fileName: 'session snapshot' } }));
+      return;
+    } catch (error) {
+      sessionStorage.removeItem('chainos-imported-fixture');
+    }
+  }
   try {
     const response = await fetch('data/fixture.json');
     if (!response.ok) throw new Error(`Fixture request failed: ${response.status}`);
@@ -100,6 +109,7 @@ document.addEventListener('chainos:fixture-import', (event) => {
   const fixture = event.detail?.fixture;
   if (!fixture) return;
   activeFixture = fixture;
+  sessionStorage.setItem('chainos-imported-fixture', JSON.stringify(fixture));
   document.getElementById('sync-label').textContent = `Imported ${event.detail.fileName || 'fixture'}`;
   syncStatus.classList.remove('fallback');
   const shortages = fixture.shortages || [];
@@ -146,7 +156,7 @@ document.addEventListener('chainos:resolution', (event) => {
 
 document.addEventListener('chainos:demo-reset', () => {
   ['chainos-planner-activity', 'chainos-saved-views', 'chainos-planner-comments'].forEach((key) => localStorage.removeItem(key));
-  ['chainos-action-status', 'chainos-late-action-status', 'chainos-scenario-status', 'chainos-owner-shortage', 'chainos-owner-late', 'chainos-resolution-shortage', 'chainos-resolution-late'].forEach((key) => sessionStorage.removeItem(key));
+  ['chainos-action-status', 'chainos-late-action-status', 'chainos-scenario-status', 'chainos-owner-shortage', 'chainos-owner-late', 'chainos-resolution-shortage', 'chainos-resolution-late', 'chainos-imported-fixture'].forEach((key) => sessionStorage.removeItem(key));
   window.location.reload();
 });
 
