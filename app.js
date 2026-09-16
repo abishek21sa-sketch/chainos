@@ -139,6 +139,9 @@ document.addEventListener('chainos:resolution', (event) => {
     item.querySelector('.queue-status span:nth-child(2)')?.replaceChildren(document.createTextNode(resolved ? 'Resolved' : (type === 'late' ? 'At risk' : 'Critical')));
   }
   if (type === 'shortage') document.getElementById('risk-count').textContent = resolved ? '00' : String((activeFixture?.shortages || [1]).length).padStart(2, '0');
+  const activeQueueItems = Array.from(document.querySelectorAll('.queue-list .queue-item')).filter((queueItem) => !queueItem.classList.contains('resolved')).length;
+  const queueCount = document.querySelector('.queue-count');
+  if (queueCount) queueCount.textContent = String(activeQueueItems).padStart(2, '0');
 });
 
 document.addEventListener('chainos:demo-reset', () => {
