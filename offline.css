@@ -1,0 +1,1 @@
+.offline-status{background:#fff8eb;border:1px solid #f0ddb7;border-radius:5px;color:#9a733c;display:none;font:8px var(--mono);padding:7px 9px;position:fixed;right:24px;top:78px;z-index:40}.offline-status.visible{display:block}@media(max-width:560px){.offline-status{right:14px;top:66px}}
