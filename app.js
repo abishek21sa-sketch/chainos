@@ -141,6 +141,12 @@ document.addEventListener('chainos:resolution', (event) => {
   if (type === 'shortage') document.getElementById('risk-count').textContent = resolved ? '00' : String((activeFixture?.shortages || [1]).length).padStart(2, '0');
 });
 
+document.addEventListener('chainos:demo-reset', () => {
+  ['chainos-planner-activity', 'chainos-saved-views', 'chainos-planner-comments'].forEach((key) => localStorage.removeItem(key));
+  ['chainos-action-status', 'chainos-late-action-status', 'chainos-scenario-status', 'chainos-owner-shortage', 'chainos-owner-late', 'chainos-resolution-shortage', 'chainos-resolution-late'].forEach((key) => sessionStorage.removeItem(key));
+  window.location.reload();
+});
+
 document.querySelectorAll('[data-open-drawer]').forEach((button) => button.addEventListener('click', () => showDrawer(button.dataset.openDrawer)));
 document.querySelectorAll('.network-node').forEach((node) => {
   const nodeName = node.querySelector('strong')?.textContent || '';

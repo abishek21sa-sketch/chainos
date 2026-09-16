@@ -1,10 +1,11 @@
 (function () {
-  document.body.insertAdjacentHTML('beforeend', '<div class="activity-backdrop" id="activity-backdrop"></div><section class="activity-panel" id="activity-panel" aria-hidden="true" role="dialog" aria-labelledby="activity-title"><button class="activity-close" id="activity-close" aria-label="Close planner activity">×</button><div class="drawer-kicker">PLANNER ACTIVITY</div><h2 id="activity-title">Recent decisions</h2><p class="activity-intro">A local review trail for actions queued in this browser. Click a status to mark it reviewed.</p><div class="activity-list" id="activity-list"></div><div class="activity-foot">Stored locally for this demo session · no requests sent</div></section>');
+  document.body.insertAdjacentHTML('beforeend', '<div class="activity-backdrop" id="activity-backdrop"></div><section class="activity-panel" id="activity-panel" aria-hidden="true" role="dialog" aria-labelledby="activity-title"><button class="activity-close" id="activity-close" aria-label="Close planner activity">×</button><div class="drawer-kicker">PLANNER ACTIVITY</div><h2 id="activity-title">Recent decisions</h2><p class="activity-intro">A local review trail for actions queued in this browser. Click a status to mark it reviewed.</p><div class="activity-list" id="activity-list"></div><div class="activity-foot">Stored locally for this demo session · no requests sent<button class="activity-reset" id="activity-reset" type="button">Reset local demo state</button></div></section>');
   const panel = document.getElementById('activity-panel');
   const backdrop = document.getElementById('activity-backdrop');
   const list = document.getElementById('activity-list');
   const openButton = document.getElementById('notification-button');
   const closeButton = document.getElementById('activity-close');
+  const resetButton = document.getElementById('activity-reset');
   const storageKey = 'chainos-planner-activity';
   if (!panel || !backdrop || !list || !openButton || !closeButton) return;
 
@@ -27,6 +28,10 @@
   openButton.addEventListener('click', open);
   closeButton.addEventListener('click', close);
   backdrop.addEventListener('click', close);
+  resetButton.addEventListener('click', () => {
+    if (!window.confirm('Reset saved views, notes, approvals, and exception status for this demo?')) return;
+    document.dispatchEvent(new CustomEvent('chainos:demo-reset'));
+  });
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
   list.addEventListener('click', (event) => {
     const approveButton = event.target.closest('[data-activity-approve]');
