@@ -129,6 +129,18 @@ document.addEventListener('chainos:activity-approval', (event) => {
   document.querySelector('.queue-item.critical')?.classList.add('action-queued');
 });
 
+document.addEventListener('chainos:resolution', (event) => {
+  const type = event.detail?.type;
+  const resolved = event.detail?.status === 'resolved';
+  if (!type || type === 'healthy') return;
+  const item = document.querySelector(`.queue-item.${type === 'late' ? 'warning' : 'critical'}`);
+  if (item) {
+    item.classList.toggle('resolved', resolved);
+    item.querySelector('.queue-status span:nth-child(2)')?.replaceChildren(document.createTextNode(resolved ? 'Resolved' : (type === 'late' ? 'At risk' : 'Critical')));
+  }
+  if (type === 'shortage') document.getElementById('risk-count').textContent = resolved ? '00' : String((activeFixture?.shortages || [1]).length).padStart(2, '0');
+});
+
 document.querySelectorAll('[data-open-drawer]').forEach((button) => button.addEventListener('click', () => showDrawer(button.dataset.openDrawer)));
 document.querySelectorAll('.network-node').forEach((node) => {
   const nodeName = node.querySelector('strong')?.textContent || '';
