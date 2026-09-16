@@ -15,4 +15,11 @@ for (const marker of requiredMarkup) {
 }
 if (!fixture.shortages?.length) throw new Error('Fixture must contain at least one shortage');
 if (!fixture.suppliers?.length || !fixture.purchaseOrders?.length) throw new Error('Fixture must contain suppliers and purchase orders');
+const supplierIds = new Set((fixture.suppliers || []).map((supplier) => supplier.id));
+const partIds = new Set((fixture.parts || []).map((part) => part.id));
+const poIds = new Set((fixture.purchaseOrders || []).map((order) => order.id));
+const plantIds = new Set((fixture.plants || []).map((plant) => plant.id));
+if ((fixture.purchaseOrders || []).some((order) => !supplierIds.has(order.supplierId) || !partIds.has(order.partId))) throw new Error('Purchase orders must reference existing suppliers and parts');
+if ((fixture.shipments || []).some((shipment) => !poIds.has(shipment.purchaseOrderId))) throw new Error('Shipments must reference existing purchase orders');
+if ((fixture.shortages || []).some((shortage) => !partIds.has(shortage.partId) || !plantIds.has(shortage.plantId))) throw new Error('Shortages must reference existing parts and plants');
 console.log(`ChainOS validation passed: ${fixture.suppliers.length} suppliers, ${fixture.purchaseOrders.length} POs, ${fixture.shortages.length} shortage(s).`);
