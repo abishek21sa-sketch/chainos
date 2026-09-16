@@ -11,8 +11,17 @@
     if (!file) return;
     try {
       const fixture = JSON.parse(await file.text());
-      const valid = fixture && Array.isArray(fixture.suppliers) && Array.isArray(fixture.purchaseOrders) && Array.isArray(fixture.shortages);
-      if (!valid) throw new Error('Fixture must include suppliers, purchaseOrders, and shortages arrays.');
+      const errors = [];
+      if (!fixture || typeof fixture !== 'object') errors.push('Root must be a JSON object.');
+      if (fixture && !fixture.workspace) errors.push('workspace is required.');
+      if (fixture && !Array.isArray(fixture.suppliers)) errors.push('suppliers must be an array.');
+      if (fixture && !Array.isArray(fixture.purchaseOrders)) errors.push('purchaseOrders must be an array.');
+      if (fixture && !Array.isArray(fixture.shortages)) errors.push('shortages must be an array.');
+      if (fixture?.suppliers?.some((supplier) => !supplier.id || !supplier.name)) errors.push('Every supplier needs an id and name.');
+      if (fixture?.purchaseOrders?.some((order) => !order.id || !order.partId || !order.supplierId || !Number.isFinite(Number(order.quantity)))) errors.push('Every purchase order needs ids and a numeric quantity.');
+      if (fixture?.shortages?.some((shortage) => !shortage.id || !shortage.partId || !Number.isFinite(Number(shortage.daysOfSupply)) || !Number.isFinite(Number(shortage.affectedHours)))) errors.push('Every shortage needs ids, daysOfSupply, and affectedHours.');
+      if (fixture?.asOf && Number.isNaN(Date.parse(fixture.asOf))) errors.push('asOf must be a valid date.');
+      if (errors.length) throw new Error(errors.slice(0, 3).join(' '));
       document.dispatchEvent(new CustomEvent('chainos:fixture-import', { detail: { fixture, fileName: file.name } }));
     } catch (error) {
       showToast(`Import failed: ${error.message}`);
