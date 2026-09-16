@@ -118,6 +118,17 @@ document.addEventListener('chainos:fixture-import', (event) => {
   showToast(`Imported ${event.detail.fileName || 'fixture'} — ${fixture.suppliers.length} suppliers, ${fixture.purchaseOrders.length} POs.`);
 });
 
+document.addEventListener('chainos:activity-approval', (event) => {
+  if (!event.detail?.label?.includes('Expedite')) return;
+  sessionStorage.setItem('chainos-action-status', 'approved');
+  const actionButton = document.getElementById('accept-action');
+  actionButton.innerHTML = 'Expedite approved <span>✓</span>';
+  actionButton.classList.add('queued');
+  document.querySelector('.action-panel')?.classList.add('action-queued');
+  document.querySelector('.queue-item.critical .queue-status span:nth-child(2)')?.replaceChildren(document.createTextNode('Approved'));
+  document.querySelector('.queue-item.critical')?.classList.add('action-queued');
+});
+
 document.querySelectorAll('[data-open-drawer]').forEach((button) => button.addEventListener('click', () => showDrawer(button.dataset.openDrawer)));
 document.querySelectorAll('.network-node').forEach((node) => {
   const nodeName = node.querySelector('strong')?.textContent || '';
@@ -232,3 +243,4 @@ document.querySelectorAll('.nav-item').forEach((item) => item.addEventListener('
 
 loadFixture();
 if (sessionStorage.getItem('chainos-action-status') === 'queued') markActionQueued();
+if (sessionStorage.getItem('chainos-action-status') === 'approved') { markActionQueued(); document.getElementById('accept-action').innerHTML = 'Expedite approved <span>✓</span>'; }

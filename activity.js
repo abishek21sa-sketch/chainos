@@ -19,7 +19,7 @@
   }
   function renderActivity() {
     const entries = readActivity();
-    list.innerHTML = entries.length ? entries.map((entry, index) => `<div class="activity-item"><span class="activity-icon">✓</span><div><strong>${entry.label}</strong><small>${entry.time}</small></div><button class="activity-status ${entry.status === 'Reviewed' ? 'reviewed' : ''}" data-activity-index="${index}" type="button">${entry.status || 'Queued'}</button></div>`).join('') : '<div class="activity-empty"><strong>No queued decisions yet</strong><span>Accept a recommendation or queue a request to start the local trail.</span></div>';
+    list.innerHTML = entries.length ? entries.map((entry, index) => { const isAction = /Expedite|Scenario plan/.test(entry.label); const approved = entry.status === 'Approved'; return `<div class="activity-item"><span class="activity-icon">✓</span><div><strong>${entry.label}</strong><small>${entry.time}</small></div><div class="activity-actions"><button class="activity-status ${entry.status === 'Reviewed' ? 'reviewed' : ''} ${approved ? 'approved' : ''}" data-activity-index="${index}" type="button">${entry.status || 'Queued'}</button>${isAction ? `<button class="activity-approve" data-activity-approve="${index}" type="button" ${approved ? 'disabled' : ''}>${approved ? '✓ Approved' : 'Approve'}</button>` : ''}</div></div>`; }).join('') : '<div class="activity-empty"><strong>No queued decisions yet</strong><span>Accept a recommendation or queue a request to start the local trail.</span></div>';
   }
   function open() { renderActivity(); panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); backdrop.classList.add('show'); }
   function close() { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); backdrop.classList.remove('show'); }
@@ -29,6 +29,17 @@
   backdrop.addEventListener('click', close);
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
   list.addEventListener('click', (event) => {
+    const approveButton = event.target.closest('[data-activity-approve]');
+    if (approveButton) {
+      const entries = readActivity();
+      const index = Number(approveButton.dataset.activityApprove);
+      if (!entries[index] || entries[index].status === 'Approved') return;
+      entries[index].status = 'Approved';
+      writeActivity(entries); renderActivity();
+      document.dispatchEvent(new CustomEvent('chainos:activity-approval', { detail: { label: entries[index].label } }));
+      showToast('Planner action approved for execution.');
+      return;
+    }
     const statusButton = event.target.closest('[data-activity-index]');
     if (!statusButton) return;
     const entries = readActivity();
