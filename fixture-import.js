@@ -1,10 +1,16 @@
 (function () {
   const popover = document.getElementById('sync-popover');
   if (!popover) return;
-  popover.insertAdjacentHTML('beforeend', '<div class="fixture-import"><button class="fixture-import-button" id="fixture-import-button" type="button">Import fixture JSON</button><input id="fixture-import-input" type="file" accept="application/json,.json" hidden><span class="fixture-import-help">Load a compatible local planning snapshot for review.</span></div>');
+  popover.insertAdjacentHTML('beforeend', '<div class="fixture-import"><div class="fixture-import-actions"><button class="fixture-import-button" id="fixture-import-button" type="button">Import fixture JSON</button><button class="fixture-import-button fixture-template-button" id="fixture-template-button" type="button">Download template</button></div><input id="fixture-import-input" type="file" accept="application/json,.json" hidden><span class="fixture-import-help">Load a compatible local planning snapshot for review.</span></div>');
   const button = document.getElementById('fixture-import-button');
+  const templateButton = document.getElementById('fixture-template-button');
   const input = document.getElementById('fixture-import-input');
   button.addEventListener('click', () => input.click());
+  templateButton.addEventListener('click', () => {
+    const template = { workspace: 'Northstar Mobility', asOf: '2025-09-16T09:42:00-05:00', suppliers: [{ id: 'SUP-EXAMPLE-01', name: 'Example Supplier', region: 'US South', reliabilityScore: 95, status: 'healthy' }], purchaseOrders: [{ id: 'PO-EXAMPLE-01', supplierId: 'SUP-EXAMPLE-01', partId: 'PART-EXAMPLE-01', quantity: 100, dueDate: '2025-09-20', status: 'open' }], shortages: [] };
+    const download = document.createElement('a'); download.href = URL.createObjectURL(new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' })); download.download = 'chainos-fixture-template.json';
+    document.body.appendChild(download); download.click(); download.remove(); window.setTimeout(() => URL.revokeObjectURL(download.href), 0); showToast('Fixture template downloaded.');
+  });
   input.addEventListener('change', async () => {
     const file = input.files?.[0];
     input.value = '';
