@@ -305,7 +305,8 @@ function markActionQueued(source = 'dashboard') {
   }
   if (activeDrawerType === 'shortage' || source === 'dashboard') {
     sessionStorage.setItem('chainos-action-status', 'queued');
-    document.getElementById('risk-count').textContent = '03';
+    const shortageCount = activeFixture?.shortages?.length ?? 3;
+    document.getElementById('risk-count').textContent = String(shortageCount).padStart(2, '0');
     const actionButton = document.getElementById('accept-action');
     actionButton.innerHTML = 'Expedite queued <span>✓</span>';
     actionButton.classList.add('queued');
