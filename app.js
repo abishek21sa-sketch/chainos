@@ -77,8 +77,36 @@ document.addEventListener('click', (event) => { if (!syncPopover.contains(event.
 const scenarioModal = document.getElementById('scenario-modal');
 const scenarioBackdrop = document.getElementById('scenario-backdrop');
 let scenarioReady = false;
+
+function getScenarioImpact() {
+  const shortage = activeFixture?.shortages?.[0];
+  const plannerAction = activeFixture?.plannerActions?.[0];
+  const currentCover = Number(shortage?.daysOfSupply);
+  const protectedHours = Number(plannerAction?.impactHours ?? shortage?.affectedHours);
+  const costDelta = Number(plannerAction?.costDelta);
+  const projectedCover = Number.isFinite(currentCover) ? Number((currentCover + 2).toFixed(1)) : 3.8;
+  return {
+    projectedCover,
+    coverDelta: Number.isFinite(currentCover) ? Number((projectedCover - currentCover).toFixed(1)) : 2,
+    protectedHours: Number.isFinite(protectedHours) ? protectedHours : 18.4,
+    costDelta: Number.isFinite(costDelta) ? costDelta : 4280
+  };
+}
+
+function updateScenarioPreview() {
+  const impact = getScenarioImpact();
+  const values = document.querySelectorAll('.scenario-result strong');
+  const deltas = document.querySelectorAll('.scenario-result .positive');
+  if (values[0]) values[0].textContent = `${impact.projectedCover} days`;
+  if (values[1]) values[1].textContent = `${impact.protectedHours} hrs`;
+  if (values[2]) values[2].textContent = `+$${impact.costDelta.toLocaleString('en-US')}`;
+  if (deltas[0]) deltas[0].textContent = `+${impact.coverDelta} days`;
+  if (deltas[1]) deltas[1].textContent = 'Recovered';
+}
+
 function openScenario() {
   scenarioReady = false;
+  updateScenarioPreview();
   document.querySelector('.scenario-modal-intro').textContent = 'Compare one planner move against the current baseline before committing it.';
   document.getElementById('scenario-run').innerHTML = 'Run preview <span>→</span>';
   scenarioModal.classList.add('open'); scenarioModal.setAttribute('aria-hidden', 'false'); scenarioBackdrop.classList.add('show'); focusOverlay(scenarioModal);
@@ -87,9 +115,10 @@ function closeScenario() { scenarioModal.classList.remove('open'); scenarioModal
 function runScenario() {
   if (!scenarioReady) {
     scenarioReady = true;
+    const impact = getScenarioImpact();
     document.querySelector('.scenario-modal-intro').textContent = 'Preview complete. Review the impact, then queue this plan for planner review.';
     document.getElementById('scenario-run').innerHTML = 'Queue plan <span>✓</span>';
-    showToast('Preview complete: 3.8 days cover and 18.4 hours protected.');
+    showToast(`Preview complete: ${impact.projectedCover} days cover and ${impact.protectedHours} hours protected.`);
     return;
   }
   scenarioReady = false;
