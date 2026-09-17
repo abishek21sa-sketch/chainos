@@ -61,6 +61,7 @@ function updateFixtureHealth(fixture) {
   const metricValues = document.querySelectorAll('.metric-grid .metric-value');
   const exposureHours = (fixture?.shortages || []).reduce((total, shortage) => total + (Number(shortage.affectedHours) || 0), 0);
   const lateShipments = (fixture?.shipments || []).filter((shipment) => shipment.status === 'late').length;
+  const queueCounts = { all: (fixture?.shortages || []).length + lateShipments, critical: (fixture?.shortages || []).length, inbound: lateShipments };
   const coverSamples = (fixture?.inventoryPositions || []).map((position) => {
     const demand = (fixture?.demandSignals || []).find((signal) => signal.plantId === position.plantId && signal.partId === position.partId);
     if (!demand || !Number.isFinite(Number(demand.quantity))) return null;
@@ -74,6 +75,12 @@ function updateFixtureHealth(fixture) {
   if (metricValues[1]?.firstChild) metricValues[1].firstChild.textContent = exposureHours.toFixed(1);
   if (metricValues[2]) metricValues[2].textContent = String(lateShipments).padStart(2, '0');
   if (metricValues[3]?.firstChild && Number.isFinite(networkCover)) metricValues[3].firstChild.textContent = networkCover.toFixed(1);
+  document.querySelectorAll('.queue-filter').forEach((filter) => {
+    const count = queueCounts[filter.dataset.queueFilter];
+    if (Number.isFinite(count)) filter.querySelector('span')?.replaceChildren(document.createTextNode(String(count).padStart(2, '0')));
+  });
+  const queueCount = document.querySelector('.queue-count');
+  if (queueCount) queueCount.textContent = String(queueCounts.all).padStart(2, '0');
   const supplierCount = Array.isArray(fixture?.suppliers) ? fixture.suppliers.length : 0;
   const plantCount = Array.isArray(fixture?.plants) ? fixture.plants.length : 0;
   const laneCount = Array.isArray(fixture?.shipments) ? fixture.shipments.length : 0;
