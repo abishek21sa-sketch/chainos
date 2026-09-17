@@ -46,6 +46,11 @@ function updateFixtureHealth(fixture) {
   if (stripValues[0]) stripValues[0].textContent = `${shipmentsToday} shipment${shipmentsToday === 1 ? '' : 's'} arriving today`;
   if (stripValues[1]) stripValues[1].textContent = `${openCommitments} PO${openCommitments === 1 ? '' : 's'} need confirmation`;
   if (stripValues[2] && healthValues[0]) stripValues[2].textContent = `${healthValues[0].textContent} · ${signalCount} signals evaluated`;
+  const metricValues = document.querySelectorAll('.metric-grid .metric-value');
+  const exposureHours = (fixture?.shortages || []).reduce((total, shortage) => total + (Number(shortage.affectedHours) || 0), 0);
+  const lateShipments = (fixture?.shipments || []).filter((shipment) => shipment.status === 'late').length;
+  if (metricValues[1]?.firstChild) metricValues[1].firstChild.textContent = exposureHours.toFixed(1);
+  if (metricValues[2]) metricValues[2].textContent = String(lateShipments).padStart(2, '0');
 }
 
 const fixtures = {
