@@ -9,10 +9,35 @@
   const panel = document.getElementById('material-detail');
   const backdrop = document.getElementById('material-detail-backdrop');
   const closeButton = document.getElementById('material-detail-close');
+  function fixtureDetail(name) {
+    const fixture = window.chainosFixture;
+    const part = fixture?.parts?.find((entry) => name === entry.partNumber || name === entry.id || name === `${entry.partNumber} · ${entry.name}` || name.includes(entry.partNumber));
+    if (!part) return null;
+    const inventory = (fixture.inventoryPositions || []).find((entry) => entry.partId === part.id);
+    const shortage = (fixture.shortages || []).find((entry) => entry.partId === part.id);
+    const demand = (fixture.demandSignals || []).find((entry) => entry.partId === part.id);
+    const purchaseOrder = (fixture.purchaseOrders || []).find((entry) => entry.partId === part.id);
+    const supplier = fixture.suppliers?.find((entry) => entry.id === purchaseOrder?.supplierId);
+    const plant = fixture.plants?.find((entry) => entry.id === (shortage?.plantId || inventory?.plantId));
+    const line = plant?.lines?.[0];
+    const signal = shortage?.severity === 'critical' ? 'Critical' : purchaseOrder?.status === 'at-risk' ? 'Watch' : 'Healthy';
+    const daysCover = shortage?.daysOfSupply ?? (inventory && demand && Number(demand.quantity) ? ((inventory.onHand - (inventory.allocated || 0)) / Number(demand.quantity) * 2).toFixed(1) : '—');
+    const floor = inventory?.safetyStock != null ? `${inventory.safetyStock.toLocaleString('en-US')} ${part.unit || 'units'}` : '—';
+    return {
+      title: `${part.partNumber} · ${part.name}`,
+      plant: plant ? `${plant.name.replace('Northstar ', '')} · ${line?.name || 'Production'}` : 'Unassigned plant',
+      cover: daysCover === '—' ? '—' : `${daysCover} days`,
+      floor,
+      demand: line?.unitsPerShift ? `${line.unitsPerShift.toLocaleString('en-US')} units per shift` : demand?.quantity ? `${Number(demand.quantity).toLocaleString('en-US')} units / period` : '—',
+      source: purchaseOrder ? `${supplier?.name || 'Supplier'} · ${purchaseOrder.id}` : 'No active purchase order',
+      signal,
+      note: signal === 'Critical' ? 'Projected to breach the safety floor before the current inbound. Air expedite is available.' : signal === 'Watch' ? 'Inbound is at risk, but current coverage remains above the safety floor.' : 'Coverage remains protected and the next inbound is on schedule.'
+    };
+  }
   function close() { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); backdrop.classList.remove('show'); }
   function open(name) {
-    const detail = details[name] || details['MAT-2048 · Inverter housing'];
-    document.getElementById('material-detail-title').textContent = name;
+    const detail = fixtureDetail(name) || details[name] || details['MAT-2048 · Inverter housing'];
+    document.getElementById('material-detail-title').textContent = detail.title || name;
     document.getElementById('material-detail-plant').textContent = detail.plant;
     document.getElementById('material-detail-cover').textContent = detail.cover;
     document.getElementById('material-detail-floor').textContent = detail.floor;
