@@ -27,6 +27,15 @@ function updateFixtureContext(fixture, sourceLabel = 'fixture.json') {
   const sourceLabelNode = document.querySelector('.sync-popover-foot');
   if (workspaceName) workspaceName.textContent = workspace;
   if (sourceLabelNode) sourceLabelNode.textContent = `Source: ${workspace} · ${sourceLabel}`;
+  const asOf = fixture?.asOf ? new Date(fixture.asOf) : null;
+  if (asOf && !Number.isNaN(asOf.getTime())) {
+    const isoDate = new Date(Date.UTC(asOf.getFullYear(), asOf.getMonth(), asOf.getDate()));
+    isoDate.setUTCDate(isoDate.getUTCDate() + 4 - (isoDate.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(isoDate.getUTCFullYear(), 0, 1));
+    const week = Math.ceil((((isoDate - yearStart) / 86400000) + 1) / 7);
+    const eyebrow = document.querySelector('.eyebrow');
+    if (eyebrow) eyebrow.innerHTML = `<span class="live-dot"></span>${asOf.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} <span class="eyebrow-separator">·</span> Week ${week}`;
+  }
 }
 
 function updateFixtureHealth(fixture) {
