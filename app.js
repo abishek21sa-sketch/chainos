@@ -343,7 +343,7 @@ async function loadFixture() {
     const footer = document.querySelector('.footer-note span');
     if (footer && activeFixture.workspace) footer.textContent = `ChainOS Phase 1 · ${activeFixture.workspace} fixture`;
     const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-    if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); refreshSecondaryInsights(activeView, activeFixture); refreshConstraintTable(activeView, activeFixture); refreshScenarioWorkspace(activeView, activeFixture); }
+    if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); refreshSecondaryInsights(activeView, activeFixture); refreshConstraintTable(activeView, activeFixture); refreshScenarioWorkspace(activeView, activeFixture); updateViewHeader(activeView, activeFixture); }
   } catch (error) {
     // The page remains usable when opened directly from disk; the visible defaults are the same fixture values.
     syncLabel.textContent = 'Demo fixture inline';
@@ -374,7 +374,7 @@ document.addEventListener('chainos:fixture-import', (event) => {
   const footer = document.querySelector('.footer-note span');
   if (footer && fixture.workspace) footer.textContent = `ChainOS Phase 2 · ${fixture.workspace} import`;
   const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-  if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, fixture); refreshSecondaryInsights(activeView, fixture); refreshConstraintTable(activeView, fixture); refreshScenarioWorkspace(activeView, fixture); }
+  if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, fixture); refreshSecondaryInsights(activeView, fixture); refreshConstraintTable(activeView, fixture); refreshScenarioWorkspace(activeView, fixture); updateViewHeader(activeView, fixture); }
   showToast(`Imported ${event.detail.fileName || 'fixture'} — ${fixture.suppliers.length} suppliers, ${fixture.purchaseOrders.length} POs.`);
 });
 
@@ -504,6 +504,28 @@ const viewCopy = {
   constraints: ['Constraint board', 'One hard constraint is currently gating production continuity.'],
   scenarios: ['Scenario workspace', 'Model an action before you commit it to the network.']
 };
+
+function updateViewHeader(view, fixture) {
+  const base = viewCopy[view] || viewCopy.overview;
+  const counts = {
+    parts: fixture?.parts?.length || 0,
+    suppliers: fixture?.suppliers?.length || 0,
+    purchaseOrders: fixture?.purchaseOrders?.length || 0,
+    shipments: fixture?.shipments?.length || 0,
+    inventory: fixture?.inventoryPositions?.length || 0,
+    constraints: fixture?.constraints?.length || 0
+  };
+  const subtitles = {
+    materials: `${counts.parts} components are shaping this planning outlook.`,
+    suppliers: `${counts.suppliers} suppliers are contributing commitments to the network.`,
+    'purchase-orders': `${counts.purchaseOrders} open commitments are in the active snapshot.`,
+    logistics: `${counts.shipments} inbound lanes are represented in this snapshot.`,
+    inventory: `${counts.inventory} inventory position${counts.inventory === 1 ? '' : 's'} are available for review.`,
+    constraints: `${counts.constraints} constraint${counts.constraints === 1 ? '' : 's'} are represented in the active plan.`
+  };
+  document.getElementById('page-title').textContent = base[0];
+  document.getElementById('page-subtitle').textContent = subtitles[view] || base[1];
+}
 
 function refreshMaterialTable(view, fixture) {
   if (!['materials', 'inventory'].includes(view) || !fixture?.parts?.length) return;
@@ -651,7 +673,7 @@ function renderView(view) {
 document.querySelectorAll('.nav-item').forEach((item) => item.addEventListener('click', () => {
   document.querySelectorAll('.nav-item').forEach((nav) => nav.classList.remove('active'));
   item.classList.add('active'); const copy = viewCopy[item.dataset.view];
-  document.getElementById('page-title').textContent = copy[0]; document.getElementById('page-subtitle').textContent = copy[1];
+  updateViewHeader(item.dataset.view, activeFixture);
   document.querySelector('.page-content').classList.toggle('view-mode', item.dataset.view !== 'overview');
   renderView(item.dataset.view);
   refreshMaterialTable(item.dataset.view, activeFixture);
