@@ -335,7 +335,7 @@ async function loadFixture() {
     const footer = document.querySelector('.footer-note span');
     if (footer && activeFixture.workspace) footer.textContent = `ChainOS Phase 1 · ${activeFixture.workspace} fixture`;
     const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-    if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); refreshSecondaryInsights(activeView, activeFixture); refreshConstraintTable(activeView, activeFixture); }
+    if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); refreshSecondaryInsights(activeView, activeFixture); refreshConstraintTable(activeView, activeFixture); refreshScenarioWorkspace(activeView, activeFixture); }
   } catch (error) {
     // The page remains usable when opened directly from disk; the visible defaults are the same fixture values.
     syncLabel.textContent = 'Demo fixture inline';
@@ -366,7 +366,7 @@ document.addEventListener('chainos:fixture-import', (event) => {
   const footer = document.querySelector('.footer-note span');
   if (footer && fixture.workspace) footer.textContent = `ChainOS Phase 2 · ${fixture.workspace} import`;
   const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-  if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, fixture); refreshSecondaryInsights(activeView, fixture); refreshConstraintTable(activeView, fixture); }
+  if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, fixture); refreshSecondaryInsights(activeView, fixture); refreshConstraintTable(activeView, fixture); refreshScenarioWorkspace(activeView, fixture); }
   showToast(`Imported ${event.detail.fileName || 'fixture'} — ${fixture.suppliers.length} suppliers, ${fixture.purchaseOrders.length} POs.`);
 });
 
@@ -595,6 +595,30 @@ function refreshConstraintTable(view, fixture) {
   }
 }
 
+function refreshScenarioWorkspace(view, fixture) {
+  if (view !== 'scenarios' || !fixture) return;
+  const host = document.getElementById('secondary-view');
+  const shortage = fixture.shortages?.[0];
+  const part = fixture.parts?.find((entry) => entry.id === shortage?.partId);
+  const plant = fixture.plants?.find((entry) => entry.id === shortage?.plantId);
+  const impact = getScenarioImpact();
+  const cardTitle = host.querySelector('.scenario-card h2');
+  const cardCopy = host.querySelector('.scenario-card p');
+  const startButton = host.querySelector('#scenario-start');
+  if (cardTitle) cardTitle.textContent = `Test a move for ${part?.partNumber || shortage?.partId || 'the active exception'}.`;
+  if (cardCopy) cardCopy.textContent = `Compare service, cost, and coverage impacts for ${plant?.name || 'the active plant'} before committing a planner move.`;
+  if (startButton?.firstChild) startButton.firstChild.textContent = `Start with ${part?.partNumber || shortage?.partId || 'active exception'} `;
+  const insightCards = host.querySelectorAll('.mini-insight');
+  if (insightCards[0]) {
+    insightCards[0].querySelector('.mini-insight-top span')?.replaceChildren(document.createTextNode(`+${impact.protectedHours} hrs`));
+    insightCards[0].querySelector('p')?.replaceChildren(document.createTextNode(`The proposed move keeps ${plant?.name || 'the active plant'} above its safety floor.`));
+  }
+  if (insightCards[1]) {
+    insightCards[1].querySelector('.mini-insight-top span')?.replaceChildren(document.createTextNode(`+$${impact.costDelta.toLocaleString('en-US')}`));
+    insightCards[1].querySelector('p')?.replaceChildren(document.createTextNode('Estimate is based on the active fixture planner action.'));
+  }
+}
+
 function renderView(view) {
   const host = document.getElementById('secondary-view');
   if (view === 'overview') { host.classList.add('hidden'); host.innerHTML = ''; return; }
@@ -625,6 +649,7 @@ document.querySelectorAll('.nav-item').forEach((item) => item.addEventListener('
   refreshMaterialTable(item.dataset.view, activeFixture);
   refreshSecondaryInsights(item.dataset.view, activeFixture);
   refreshConstraintTable(item.dataset.view, activeFixture);
+  refreshScenarioWorkspace(item.dataset.view, activeFixture);
   if (item.dataset.view !== 'overview') showToast(`${copy[0]} view selected.`);
 }));
 
