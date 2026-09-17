@@ -28,14 +28,17 @@ function updateFixtureContext(fixture, sourceLabel = 'fixture.json') {
   if (workspaceName) workspaceName.textContent = workspace;
   if (sourceLabelNode) sourceLabelNode.textContent = `Source: ${workspace} · ${sourceLabel}`;
   const asOf = fixture?.asOf ? new Date(fixture.asOf) : null;
+  let week = null;
   if (asOf && !Number.isNaN(asOf.getTime())) {
     const isoDate = new Date(Date.UTC(asOf.getFullYear(), asOf.getMonth(), asOf.getDate()));
     isoDate.setUTCDate(isoDate.getUTCDate() + 4 - (isoDate.getUTCDay() || 7));
     const yearStart = new Date(Date.UTC(isoDate.getUTCFullYear(), 0, 1));
-    const week = Math.ceil((((isoDate - yearStart) / 86400000) + 1) / 7);
+    week = Math.ceil((((isoDate - yearStart) / 86400000) + 1) / 7);
     const eyebrow = document.querySelector('.eyebrow');
     if (eyebrow) eyebrow.innerHTML = `<span class="live-dot"></span>${asOf.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} <span class="eyebrow-separator">·</span> Week ${week}`;
   }
+  const footerFixture = document.querySelector('.footer-note span:nth-child(2)');
+  if (footerFixture) footerFixture.textContent = `Fixture: ${workspace}${week ? ` / Week ${week}` : ''}`;
 }
 
 function updateFixtureHealth(fixture) {
@@ -71,6 +74,16 @@ function updateFixtureHealth(fixture) {
   if (metricValues[1]?.firstChild) metricValues[1].firstChild.textContent = exposureHours.toFixed(1);
   if (metricValues[2]) metricValues[2].textContent = String(lateShipments).padStart(2, '0');
   if (metricValues[3]?.firstChild && Number.isFinite(networkCover)) metricValues[3].firstChild.textContent = networkCover.toFixed(1);
+  const supplierCount = Array.isArray(fixture?.suppliers) ? fixture.suppliers.length : 0;
+  const plantCount = Array.isArray(fixture?.plants) ? fixture.plants.length : 0;
+  const laneCount = Array.isArray(fixture?.shipments) ? fixture.shipments.length : 0;
+  document.querySelector('.supplier-stage .stage-label span')?.replaceChildren(document.createTextNode(String(supplierCount).padStart(2, '0')));
+  document.querySelector('.plant-stage .stage-label span')?.replaceChildren(document.createTextNode(String(plantCount).padStart(2, '0')));
+  const flowBadge = document.querySelector('.flow-badge');
+  if (flowBadge) flowBadge.textContent = `${laneCount} lane${laneCount === 1 ? '' : 's'}`;
+  const coverageBreach = document.querySelector('.coverage-foot strong');
+  const primaryShortage = fixture?.shortages?.[0];
+  if (coverageBreach && primaryShortage) coverageBreach.textContent = `Next breach in ${primaryShortage.daysOfSupply} days`;
 }
 
 function updateFixtureRecommendations(fixture) {
