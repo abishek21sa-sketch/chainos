@@ -4,6 +4,22 @@ const toast = document.getElementById('toast');
 const toastCopy = document.getElementById('toast-copy');
 let activeFixture = null;
 let activeDrawerType = 'shortage';
+let focusReturnTarget = null;
+
+function focusableElements(container) {
+  return [...container.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter((element) => !element.hidden && element.offsetParent !== null);
+}
+
+function focusOverlay(container) {
+  focusReturnTarget = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  window.requestAnimationFrame(() => focusableElements(container)[0]?.focus());
+}
+
+function restoreFocus() {
+  const target = focusReturnTarget;
+  focusReturnTarget = null;
+  if (target && document.contains(target)) target.focus();
+}
 
 const fixtures = {
   shortage: { kicker: 'CRITICAL MATERIAL', title: 'Inverter housing shortage', intro: 'A constrained component is projected to interrupt production at Northstar Austin.', material: 'MAT-2048 · Inverter housing', cover: '1.8 days cover', floor: '2.0 days', progress: '28%', plant: 'Austin · Assembly line 2', line: 'EV platform / 240 units per shift', hours: '18.4 hrs', action: 'Expedite PO-8421', actionCopy: 'Air freight 480 housings from Apex Metals. Keeps coverage above safety floor.', trace: '<div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Apex Metals confirmed</strong><small>PO-8421 · 1,200 housings</small></div><time>Sep 12</time></div><div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Shipment in transit</strong><small>SHP-8421 · truck · ETA Sep 18</small></div><time>Sep 15</time></div><div class="trace-item alert"><span class="trace-dot">!</span><div><strong>Safety floor breach projected</strong><small>MAT-2048 · Austin line 2</small></div><time>Today</time></div><div class="trace-item proposed"><span class="trace-dot">↯</span><div><strong>Expedite available</strong><small>Air freight · +$4,280 estimate</small></div><time>Next</time></div>' },
@@ -32,9 +48,9 @@ function showDrawer(type = 'shortage') {
   document.getElementById('drawer-action').innerHTML = `${type === 'late' ? 'Queue confirmation request' : 'Queue expedite request'} <span>→</span>`;
   document.getElementById('drawer-action').disabled = type === 'healthy';
   if (type === 'healthy') document.getElementById('drawer-action').innerHTML = 'No action required <span>✓</span>';
-  drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); backdrop.classList.add('show');
+  drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); backdrop.classList.add('show'); focusOverlay(drawer);
 }
-function closeDrawer() { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); backdrop.classList.remove('show'); }
+function closeDrawer() { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); backdrop.classList.remove('show'); restoreFocus(); }
 function showToast(message) { toastCopy.textContent = message; toast.classList.add('show'); window.clearTimeout(showToast.timer); showToast.timer = window.setTimeout(() => toast.classList.remove('show'), 3500); }
 const syncStatus = document.getElementById('sync-status');
 const syncPopover = document.getElementById('sync-popover');
@@ -48,9 +64,9 @@ function openScenario() {
   scenarioReady = false;
   document.querySelector('.scenario-modal-intro').textContent = 'Compare one planner move against the current baseline before committing it.';
   document.getElementById('scenario-run').innerHTML = 'Run preview <span>→</span>';
-  scenarioModal.classList.add('open'); scenarioModal.setAttribute('aria-hidden', 'false'); scenarioBackdrop.classList.add('show');
+  scenarioModal.classList.add('open'); scenarioModal.setAttribute('aria-hidden', 'false'); scenarioBackdrop.classList.add('show'); focusOverlay(scenarioModal);
 }
-function closeScenario() { scenarioModal.classList.remove('open'); scenarioModal.setAttribute('aria-hidden', 'true'); scenarioBackdrop.classList.remove('show'); }
+function closeScenario() { scenarioModal.classList.remove('open'); scenarioModal.setAttribute('aria-hidden', 'true'); scenarioBackdrop.classList.remove('show'); restoreFocus(); }
 function runScenario() {
   if (!scenarioReady) {
     scenarioReady = true;
@@ -229,6 +245,17 @@ document.getElementById('scenario-cancel').addEventListener('click', closeScenar
 document.getElementById('scenario-run').addEventListener('click', runScenario);
 scenarioBackdrop.addEventListener('click', closeScenario);
 document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeScenario(); });
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Tab') return;
+  const overlay = drawer.classList.contains('open') ? drawer : scenarioModal.classList.contains('open') ? scenarioModal : null;
+  if (!overlay) return;
+  const elements = focusableElements(overlay);
+  if (!elements.length) return;
+  const first = elements[0];
+  const last = elements[elements.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
 document.querySelector('.icon-button:not(#notification-button)').addEventListener('click', () => showDrawer('shortage'));
 document.querySelector('.network-panel .text-button').addEventListener('click', () => showToast('Network view is anchored on the active Austin constraint.'));
 
