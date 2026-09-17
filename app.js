@@ -2,6 +2,9 @@ const drawer = document.getElementById('detail-drawer');
 const backdrop = document.getElementById('drawer-backdrop');
 const toast = document.getElementById('toast');
 const toastCopy = document.getElementById('toast-copy');
+drawer.setAttribute('role', 'dialog');
+drawer.setAttribute('aria-modal', 'true');
+drawer.setAttribute('aria-labelledby', 'drawer-title');
 let activeFixture = null;
 let activeDrawerType = 'shortage';
 let focusReturnTarget = null;
@@ -244,12 +247,15 @@ function closeDrawer() { drawer.classList.remove('open'); drawer.setAttribute('a
 function showToast(message) { toastCopy.textContent = message; toast.classList.add('show'); window.clearTimeout(showToast.timer); showToast.timer = window.setTimeout(() => toast.classList.remove('show'), 3500); }
 const syncStatus = document.getElementById('sync-status');
 const syncPopover = document.getElementById('sync-popover');
-function toggleSyncPopover() { const open = syncPopover.classList.toggle('open'); syncPopover.setAttribute('aria-hidden', String(!open)); }
+syncStatus.setAttribute('aria-haspopup', 'dialog');
+syncStatus.setAttribute('aria-expanded', 'false');
+function toggleSyncPopover() { const open = syncPopover.classList.toggle('open'); syncPopover.setAttribute('aria-hidden', String(!open)); syncStatus.setAttribute('aria-expanded', String(open)); }
 syncStatus.addEventListener('click', toggleSyncPopover);
-document.addEventListener('click', (event) => { if (!syncPopover.contains(event.target) && !syncStatus.contains(event.target)) { syncPopover.classList.remove('open'); syncPopover.setAttribute('aria-hidden', 'true'); } });
+document.addEventListener('click', (event) => { if (!syncPopover.contains(event.target) && !syncStatus.contains(event.target)) { syncPopover.classList.remove('open'); syncPopover.setAttribute('aria-hidden', 'true'); syncStatus.setAttribute('aria-expanded', 'false'); } });
 const scenarioModal = document.getElementById('scenario-modal');
 const scenarioBackdrop = document.getElementById('scenario-backdrop');
 let scenarioReady = false;
+scenarioModal.setAttribute('aria-modal', 'true');
 
 function getScenarioImpact() {
   const shortage = activeFixture?.shortages?.[0];

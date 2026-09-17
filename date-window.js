@@ -4,6 +4,8 @@
   const options = Array.from(document.querySelectorAll('[data-planning-window]'));
   const outlookFilter = document.querySelector('.coverage-panel .panel-filter');
   if (!button || !popover || !options.length) return;
+  button.setAttribute('aria-haspopup', 'dialog');
+  button.setAttribute('aria-expanded', 'false');
 
   const fallbackAnchor = new Date('2025-09-16T00:00:00-05:00');
   let anchorDate = fallbackAnchor;
@@ -32,6 +34,7 @@
   function closePopover() {
     popover.classList.remove('open');
     popover.setAttribute('aria-hidden', 'true');
+    button.setAttribute('aria-expanded', 'false');
   }
 
   function setWindow(days, announce = true) {
@@ -53,6 +56,7 @@
     event.stopPropagation();
     const isOpen = popover.classList.toggle('open');
     popover.setAttribute('aria-hidden', String(!isOpen));
+    button.setAttribute('aria-expanded', String(isOpen));
   });
   options.forEach((option) => option.addEventListener('click', () => setWindow(option.dataset.planningWindow)));
   document.addEventListener('click', (event) => {
