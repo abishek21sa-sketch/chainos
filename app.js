@@ -86,6 +86,22 @@ function showDrawer(type = 'shortage') {
       actionCopy: `${supplier?.name || 'Supplier'} should confirm the ${eta} ETA and reserve an alternate lane.`
     };
   }
+  if (type === 'healthy' && activeFixture?.suppliers?.length) {
+    const supplier = activeFixture.suppliers.find((entry) => entry.status === 'healthy') || activeFixture.suppliers[0];
+    const purchaseOrder = activeFixture.purchaseOrders?.find((entry) => entry.supplierId === supplier.id);
+    const part = activeFixture.parts?.find((entry) => entry.id === purchaseOrder?.partId);
+    const shipment = activeFixture.shipments?.find((entry) => entry.purchaseOrderId === purchaseOrder?.id);
+    const plant = activeFixture.plants?.[0];
+    const eta = shipment?.eta ? new Date(shipment.eta).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'the committed window';
+    item = {
+      ...item,
+      title: `${supplier.name} on schedule`,
+      intro: `The ${part?.name || 'active component'} lane is healthy and does not currently constrain production.`,
+      material: `${part?.partNumber || 'Active material'} · ${part?.name || 'Healthy component'}`,
+      plant: plant?.name || item.plant,
+      actionCopy: `${supplier.name} reliability is ${supplier.reliabilityScore ?? 'strong'}% and the next inbound remains inside the committed window through ${eta}.`
+    };
+  }
   activeDrawerType = type;
   document.dispatchEvent(new CustomEvent('chainos:drawer-open', { detail: { type } }));
   document.getElementById('drawer-kicker').textContent = item.kicker;
