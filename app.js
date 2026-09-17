@@ -115,6 +115,7 @@ async function loadFixture() {
     const response = await fetch('data/fixture.json');
     if (!response.ok) throw new Error(`Fixture request failed: ${response.status}`);
     activeFixture = await response.json();
+    document.dispatchEvent(new CustomEvent('chainos:fixture-ready', { detail: { fixture: activeFixture } }));
     updateFixtureContext(activeFixture);
     updateFixtureHealth(activeFixture);
     syncLabel.textContent = 'Synced 2 min ago';
