@@ -46,7 +46,27 @@ const fixtures = {
 fixtures.healthy = { kicker: 'HEALTHY FLOW', title: 'Vektor Plastics on schedule', intro: 'The cooling-manifold lane is healthy and does not currently constrain production.', material: 'PLS-7782 · Cooling manifold', cover: '12.4 days cover', floor: '7.0 days', progress: '88%', plant: 'Reno · Power systems', line: 'Power systems / 180 units per shift', hours: '0 hrs', action: 'No action required', actionCopy: 'Supplier reliability is 94% and the next inbound remains inside the committed window.', trace: '<div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Vektor Plastics confirmed</strong><small>PO-8410 · 900 manifolds</small></div><time>Sep 13</time></div><div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Shipment on schedule</strong><small>SHP-8410 · truck · ETA Sep 20</small></div><time>Sep 15</time></div><div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Safety floor protected</strong><small>PLS-7782 · Reno power systems</small></div><time>Today</time></div>' };
 
 function showDrawer(type = 'shortage') {
-  const item = fixtures[type] || fixtures.shortage;
+  let item = fixtures[type] || fixtures.shortage;
+  const shortage = activeFixture?.shortages?.[0];
+  if (type === 'shortage' && shortage) {
+    const part = activeFixture.parts?.find((entry) => entry.id === shortage.partId);
+    const plant = activeFixture.plants?.find((entry) => entry.id === shortage.plantId);
+    const plannerAction = activeFixture.plannerActions?.find((entry) => entry.shortageId === shortage.id) || activeFixture.plannerActions?.[0];
+    const purchaseOrder = activeFixture.purchaseOrders?.find((entry) => entry.partId === shortage.partId);
+    const supplier = activeFixture.suppliers?.find((entry) => entry.id === purchaseOrder?.supplierId);
+    item = {
+      ...item,
+      title: `${part?.name || shortage.partId} shortage`,
+      intro: `A constrained component is projected to interrupt production at ${plant?.name || 'the active plant'}.`,
+      material: `${part?.partNumber || shortage.partId} · ${part?.name || 'Constrained material'}`,
+      cover: `${shortage.daysOfSupply} days cover`,
+      plant: plant?.name || item.plant,
+      hours: `${shortage.affectedHours} hrs`,
+      action: purchaseOrder ? `Expedite ${purchaseOrder.id}` : item.action,
+      actionCopy: supplier ? `Expedite ${purchaseOrder.quantity?.toLocaleString?.('en-US') || purchaseOrder.quantity} units from ${supplier.name}. Keeps coverage above safety floor.` : item.actionCopy
+    };
+    if (plannerAction?.costDelta) item.actionCopy += ` Estimated cost delta: +$${Number(plannerAction.costDelta).toLocaleString('en-US')}.`;
+  }
   activeDrawerType = type;
   document.dispatchEvent(new CustomEvent('chainos:drawer-open', { detail: { type } }));
   document.getElementById('drawer-kicker').textContent = item.kicker;
