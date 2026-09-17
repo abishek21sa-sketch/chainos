@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -5,6 +6,15 @@ const root = process.cwd();
 const requiredFiles = ['index.html', 'styles.css', 'views.css', 'state.css', 'trace.css', 'scenario.css', 'interaction.css', 'status.css', 'status-state.css', 'queue.css', 'guide.css', 'guide.js', 'export.js', 'hash-nav.js', 'date-window.css', 'date-window.js', 'assumptions.css', 'assumptions.js', 'activity.css', 'activity-review.css', 'activity-approval.css', 'activity-reset.css', 'activity-export.css', 'activity.js', 'supplier-detail.css', 'supplier-detail.js', 'po-detail.css', 'po-detail.js', 'po-milestones.css', 'material-detail.css', 'material-detail.js', 'fixture-import.css', 'fixture-import.js', 'ownership.css', 'ownership.js', 'saved-views.css', 'saved-views.js', 'comments.css', 'comments.js', 'resolution.css', 'resolution-queue.css', 'resolution.js', 'table-filter.css', 'table-filter.js', 'table-sort.css', 'table-sort.js', 'triage.css', 'triage.js', 'scenario-compare.css', 'scenario-compare.js', 'share-view.css', 'share-view.js', 'offline.css', 'responsive-fix.css', 'pwa.js', 'sw.js', 'app.js', 'data/fixture.json', 'favicon.svg', 'site.webmanifest', 'robots.txt'];
 for (const file of requiredFiles) {
   if (!existsSync(join(root, file))) throw new Error(`Missing required file: ${file}`);
+}
+
+for (const file of requiredFiles.filter((entry) => entry.endsWith('.js'))) {
+  try {
+    execFileSync(process.execPath, ['--check', join(root, file)], { stdio: 'pipe' });
+  } catch (error) {
+    const detail = error.stderr?.toString().trim();
+    throw new Error(`JavaScript syntax check failed for ${file}${detail ? `: ${detail}` : ''}`);
+  }
 }
 
 const html = readFileSync(join(root, 'index.html'), 'utf8');
