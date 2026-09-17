@@ -335,7 +335,7 @@ async function loadFixture() {
     const footer = document.querySelector('.footer-note span');
     if (footer && activeFixture.workspace) footer.textContent = `ChainOS Phase 1 · ${activeFixture.workspace} fixture`;
     const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-    if (activeView && activeView !== 'overview') renderView(activeView);
+    if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); }
   } catch (error) {
     // The page remains usable when opened directly from disk; the visible defaults are the same fixture values.
     syncLabel.textContent = 'Demo fixture inline';
@@ -366,7 +366,7 @@ document.addEventListener('chainos:fixture-import', (event) => {
   const footer = document.querySelector('.footer-note span');
   if (footer && fixture.workspace) footer.textContent = `ChainOS Phase 2 · ${fixture.workspace} import`;
   const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-  if (activeView && activeView !== 'overview') renderView(activeView);
+  if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, fixture); }
   showToast(`Imported ${event.detail.fileName || 'fixture'} — ${fixture.suppliers.length} suppliers, ${fixture.purchaseOrders.length} POs.`);
 });
 
@@ -496,6 +496,37 @@ const viewCopy = {
   constraints: ['Constraint board', 'One hard constraint is currently gating production continuity.'],
   scenarios: ['Scenario workspace', 'Model an action before you commit it to the network.']
 };
+
+function refreshMaterialTable(view, fixture) {
+  if (!['materials', 'inventory'].includes(view) || !fixture?.parts?.length) return;
+  const body = document.querySelector('#secondary-view .data-table tbody');
+  if (!body) return;
+  const rows = fixture.parts.map((part) => {
+    const shortage = fixture.shortages?.find((entry) => entry.partId === part.id);
+    const inventory = fixture.inventoryPositions?.find((entry) => entry.partId === part.id);
+    const plant = fixture.plants?.find((entry) => entry.id === inventory?.plantId) || fixture.plants?.find((entry) => entry.id === shortage?.plantId);
+    const row = document.createElement('tr');
+    const material = document.createElement('td');
+    material.className = 'table-primary';
+    material.textContent = `${part.partNumber || part.id} · ${part.name || 'Unnamed part'}`;
+    const plantCell = document.createElement('td');
+    plantCell.textContent = plant?.name || '—';
+    const cover = document.createElement('td');
+    cover.className = shortage ? 'critical-text' : '';
+    cover.textContent = shortage ? `${shortage.daysOfSupply} days` : '—';
+    const floor = document.createElement('td');
+    floor.textContent = inventory?.safetyStock != null ? `${inventory.safetyStock.toLocaleString?.('en-US') || inventory.safetyStock} ea` : '—';
+    const signal = document.createElement('td');
+    const status = document.createElement('span');
+    status.className = `table-status ${shortage?.severity === 'critical' ? 'critical' : shortage ? 'watch' : 'good'}`;
+    status.textContent = shortage ? (shortage.severity === 'critical' ? 'Critical' : 'Watch') : 'Healthy';
+    signal.appendChild(status);
+    row.append(material, plantCell, cover, floor, signal);
+    return row;
+  });
+  body.replaceChildren(...rows);
+}
+
 function renderView(view) {
   const host = document.getElementById('secondary-view');
   if (view === 'overview') { host.classList.add('hidden'); host.innerHTML = ''; return; }
@@ -523,6 +554,7 @@ document.querySelectorAll('.nav-item').forEach((item) => item.addEventListener('
   document.getElementById('page-title').textContent = copy[0]; document.getElementById('page-subtitle').textContent = copy[1];
   document.querySelector('.page-content').classList.toggle('view-mode', item.dataset.view !== 'overview');
   renderView(item.dataset.view);
+  refreshMaterialTable(item.dataset.view, activeFixture);
   if (item.dataset.view !== 'overview') showToast(`${copy[0]} view selected.`);
 }));
 
