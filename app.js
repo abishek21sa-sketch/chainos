@@ -13,6 +13,13 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
 }
 
+function setInlineCopy(element, before, emphasis, after = '') {
+  if (!element) return;
+  const strong = document.createElement('strong');
+  strong.textContent = emphasis;
+  element.replaceChildren(document.createTextNode(before), strong, document.createTextNode(after));
+}
+
 function focusableElements(container) {
   return [...container.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter((element) => !element.hidden && element.offsetParent !== null);
 }
@@ -136,7 +143,7 @@ function updateFixtureRecommendations(fixture) {
     const copy = actionPanel.querySelector('.recommendation-body p');
     const impactValues = actionPanel.querySelectorAll('.recommendation-impact b');
     if (heading) heading.textContent = `Protect ${plant?.name || 'the active plant'}`;
-    if (copy) copy.innerHTML = `Expedite <strong>${purchaseOrder?.id || 'the active PO'}</strong> by air from ${supplier?.name || 'the supplier'}. Protects ${part?.name || 'the constrained material'} coverage before the ${shortage.daysOfSupply}-day breach.`;
+    setInlineCopy(copy, 'Expedite ', purchaseOrder?.id || 'the active PO', ` by air from ${supplier?.name || 'the supplier'}. Protects ${part?.name || 'the constrained material'} coverage before the ${shortage.daysOfSupply}-day breach.`);
     if (impactValues[0] && Number.isFinite(Number(plannerAction?.costDelta))) impactValues[0].textContent = `+$${Number(plannerAction.costDelta).toLocaleString('en-US')}`;
     if (impactValues[1]) impactValues[1].textContent = `${shortage.affectedHours} hrs`;
     if (impactValues[2]) impactValues[2].textContent = `Breach in ${shortage.daysOfSupply} days`;
@@ -146,7 +153,7 @@ function updateFixtureRecommendations(fixture) {
     const item = queueItems[0];
     item.querySelector('strong')?.replaceChildren(document.createTextNode(`${part?.name || shortage.partId} shortage`));
     const copy = item.querySelector('p');
-    if (copy) copy.innerHTML = `May stop ${plant?.name || 'the active plant'} in <b>${shortage.daysOfSupply} days</b>`;
+    setInlineCopy(copy, `May stop ${plant?.name || 'the active plant'} in `, `${shortage.daysOfSupply} days`);
     const meta = item.querySelectorAll('.queue-meta span');
     if (meta[0]) meta[0].textContent = part?.partNumber || shortage.partId;
     if (meta[2]) meta[2].textContent = purchaseOrder?.id || 'Active PO';
@@ -158,7 +165,7 @@ function updateFixtureRecommendations(fixture) {
     const item = queueItems[1];
     item.querySelector('strong')?.replaceChildren(document.createTextNode(`${lateSupplier?.name || 'Supplier'} shipment late`));
     const copy = item.querySelector('p');
-    if (copy) copy.innerHTML = `ETA moved to <b>${lateShipment.eta || 'the revised date'}</b>`;
+    setInlineCopy(copy, 'ETA moved to ', lateShipment.eta || 'the revised date');
     const meta = item.querySelectorAll('.queue-meta span');
     if (meta[0]) meta[0].textContent = lateOrder?.id || lateShipment.purchaseOrderId;
     if (meta[2]) meta[2].textContent = lateShipment.mode || 'Inbound';
