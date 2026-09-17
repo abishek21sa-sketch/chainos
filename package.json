@@ -4,6 +4,7 @@
   "private": true,
   "description": "Standalone ChainOS Phase 1 supply control tower",
   "scripts": {
-    "test": "node scripts/validate.mjs"
+    "test": "node scripts/validate.mjs",
+    "start": "node server.mjs"
   }
 }

@@ -8,7 +8,7 @@ Use Vercel for the first public preview. Connect the GitHub repository, set the 
 
 Use GitHub Pages when the goal is a simple portfolio URL with no additional hosting account. The workflow in `.github/workflows/deploy-pages.yml` validates the fixture, uploads the repository as a Pages artifact, and deploys on pushes to `main`. In the repository settings, set Pages to “GitHub Actions” after the first workflow run.
 
-Use Render if the project is about to grow a backend. The checked-in `render.yaml` defines a static site with `npm test` as its build command and the repository root as its publish directory. Render can later add a separate API service or database without moving the frontend.
+Use Render if the project is about to grow a backend. The checked-in `render.yaml` keeps the existing static site stable. A separate Render web service can use this same repository with build command `npm test`, start command `npm start`, and health check path `/api/health`; it will run `server.mjs` and expose `/api/fixture` for the first API boundary.
 
 ## GitHub setup
 
@@ -31,6 +31,16 @@ Use Render if the project is about to grow a backend. The checked-in `render.yam
 2. Confirm the root directory is the folder containing `render.yaml`.
 3. The build command is `npm test`; the publish directory is `.`.
 4. Add a custom domain from the Render dashboard when ready.
+
+### Render API service
+
+Create a second Web Service from the same GitHub repository so the static site and API can deploy independently:
+
+1. Choose **Web Service** rather than **Static Site**.
+2. Set the build command to `npm test`.
+3. Set the start command to `npm start`.
+4. Set the health check path to `/api/health`.
+5. The initial endpoints are `/api/health` and `/api/fixture`. Set `CHAINOS_ALLOWED_ORIGIN` to the Vercel site origin before connecting browser requests.
 
 ## Before going public
 
