@@ -84,6 +84,27 @@ function updateFixtureHealth(fixture) {
   const coverageBreach = document.querySelector('.coverage-foot strong');
   const primaryShortage = fixture?.shortages?.[0];
   if (coverageBreach && primaryShortage) coverageBreach.textContent = `Next breach in ${primaryShortage.daysOfSupply} days`;
+  document.querySelectorAll('.supplier-stage .network-node').forEach((node, index) => {
+    const supplier = fixture?.suppliers?.[index];
+    node.hidden = !supplier;
+    if (!supplier) return;
+    const poCount = (fixture.purchaseOrders || []).filter((order) => order.supplierId === supplier.id).length;
+    const lateCount = (fixture.shipments || []).filter((shipment) => shipment.status === 'late' && fixture.purchaseOrders?.some((order) => order.id === shipment.purchaseOrderId && order.supplierId === supplier.id)).length;
+    node.classList.toggle('node-warning', supplier.status !== 'healthy' || lateCount > 0);
+    node.querySelector('strong')?.replaceChildren(document.createTextNode(supplier.name));
+    node.querySelector('small')?.replaceChildren(document.createTextNode(lateCount ? `${lateCount} late shipment${lateCount === 1 ? '' : 's'}` : `${poCount} active PO${poCount === 1 ? '' : 's'}`));
+    node.querySelector('b')?.replaceChildren(document.createTextNode(`${supplier.reliabilityScore ?? '—'}%`));
+  });
+  document.querySelectorAll('.plant-stage .network-node').forEach((node, index) => {
+    const plant = fixture?.plants?.[index];
+    node.hidden = !plant;
+    if (!plant) return;
+    const shortageAtPlant = (fixture.shortages || []).find((shortage) => shortage.plantId === plant.id);
+    node.querySelector('strong')?.replaceChildren(document.createTextNode(plant.name));
+    node.querySelector('small')?.replaceChildren(document.createTextNode(plant.lines?.[0]?.name || 'Production plant'));
+    node.querySelector('b')?.replaceChildren(document.createTextNode(shortageAtPlant ? 'At risk' : '100%'));
+    node.querySelector('.plant-glyph')?.replaceChildren(document.createTextNode(plant.name.charAt(0) || 'P'));
+  });
 }
 
 function updateFixtureRecommendations(fixture) {
