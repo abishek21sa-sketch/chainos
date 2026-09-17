@@ -84,6 +84,8 @@ function updateFixtureHealth(fixture) {
   });
   const queueCount = document.querySelector('.queue-count');
   if (queueCount) queueCount.textContent = String(queueCounts.all).padStart(2, '0');
+  const queueFooter = document.getElementById('view-queue');
+  if (queueFooter && !queueExpanded) queueFooter.innerHTML = `View all ${signalCount} signals <span>→</span>`;
   const supplierCount = Array.isArray(fixture?.suppliers) ? fixture.suppliers.length : 0;
   const plantCount = Array.isArray(fixture?.plants) ? fixture.plants.length : 0;
   const laneCount = Array.isArray(fixture?.shipments) ? fixture.shipments.length : 0;
