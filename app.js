@@ -39,6 +39,13 @@ function updateFixtureHealth(fixture) {
   if (healthValues[1]) healthValues[1].textContent = String(signalCount);
   const legendNote = document.querySelector('.network-legend .legend-note');
   if (legendNote) legendNote.textContent = `Updated from ${signalCount} signals`;
+  const planningDate = asOf && !Number.isNaN(asOf.getTime()) ? asOf.toISOString().slice(0, 10) : null;
+  const shipmentsToday = (fixture?.shipments || []).filter((shipment) => shipment.eta?.slice(0, 10) === planningDate).length;
+  const openCommitments = (fixture?.purchaseOrders || []).filter((order) => !['closed', 'received', 'cancelled'].includes(order.status)).length;
+  const stripValues = document.querySelectorAll('.bottom-strip .strip-item strong');
+  if (stripValues[0]) stripValues[0].textContent = `${shipmentsToday} shipment${shipmentsToday === 1 ? '' : 's'} arriving today`;
+  if (stripValues[1]) stripValues[1].textContent = `${openCommitments} PO${openCommitments === 1 ? '' : 's'} need confirmation`;
+  if (stripValues[2] && healthValues[0]) stripValues[2].textContent = `${healthValues[0].textContent} · ${signalCount} signals evaluated`;
 }
 
 const fixtures = {
