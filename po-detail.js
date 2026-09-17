@@ -9,9 +9,51 @@
   const panel = document.getElementById('po-detail');
   const backdrop = document.getElementById('po-detail-backdrop');
   const closeButton = document.getElementById('po-detail-close');
+  function formatDate(value) {
+    if (!value) return 'Current';
+    const date = new Date(`${value}T12:00:00`);
+    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  function fixtureDetail(id) {
+    const fixture = window.chainosFixture;
+    const order = fixture?.purchaseOrders?.find((entry) => entry.id === id);
+    if (!order) return null;
+    const supplier = fixture.suppliers?.find((entry) => entry.id === order.supplierId);
+    const part = fixture.parts?.find((entry) => entry.id === order.partId);
+    const shipment = fixture.shipments?.find((entry) => entry.purchaseOrderId === order.id);
+    const quantity = Number(order.quantity);
+    const quantityLabel = Number.isFinite(quantity) ? `${quantity.toLocaleString('en-US')} ${part?.unit || 'ea'}` : String(order.quantity || '—');
+    const atRisk = order.status === 'at-risk' || shipment?.status === 'late';
+    const milestones = [['Order confirmed', `${supplier?.name || 'Supplier'} accepted the commitment`, formatDate(order.dueDate), 'complete']];
+    if (shipment) {
+      const shipmentLabel = `${shipment.id} · ${shipment.mode || 'inbound'} lane`;
+      milestones.push([atRisk ? 'ETA slipped' : shipment.status === 'in-transit' ? 'In transit' : 'Shipment scheduled', shipmentLabel, formatDate(shipment.eta), atRisk ? 'alert' : 'complete']);
+      milestones.push([atRisk ? 'Revised arrival' : 'Estimated arrival', `${atRisk ? 'Current ETA' : 'Committed ETA'} · ${formatDate(shipment.eta)}`, 'Next', 'proposed']);
+    }
+    return {
+      supplier: supplier?.name || 'Supplier',
+      material: `${part?.partNumber || order.partId || 'Part'} · ${part?.name || 'Material'}`,
+      quantity: quantityLabel,
+      due: formatDate(order.dueDate),
+      status: atRisk ? 'At risk' : shipment?.status === 'in-transit' ? 'In transit' : 'Open',
+      route: `${shipment?.origin || supplier?.name || 'Supplier'} → ${shipment?.destination || 'Inbound destination'}`,
+      milestones,
+      note: atRisk ? `Confirm the revised commitment for ${shipment?.id || order.id} before the alternate lane closes.` : 'Healthy inbound with no current production constraint.'
+    };
+  }
+  function renderMilestones(milestones) {
+    const list = document.getElementById('po-detail-milestones');
+    list.replaceChildren(...milestones.map((milestone) => {
+      const wrapper = document.createElement('div'); wrapper.className = `po-milestone ${milestone[3]}`;
+      const dot = document.createElement('span'); dot.className = 'po-milestone-dot';
+      const info = document.createElement('div'); const title = document.createElement('strong'); title.textContent = milestone[0]; const description = document.createElement('small'); description.textContent = milestone[1]; info.append(title, description);
+      const time = document.createElement('time'); time.textContent = milestone[2];
+      wrapper.append(dot, info, time); return wrapper;
+    }));
+  }
   function close() { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); backdrop.classList.remove('show'); }
   function open(id) {
-    const detail = details[id] || details['PO-8421'];
+    const detail = fixtureDetail(id) || details[id] || details['PO-8421'];
     document.getElementById('po-detail-title').textContent = id;
     document.getElementById('po-detail-supplier').textContent = detail.supplier;
     document.getElementById('po-detail-material').textContent = detail.material;
@@ -19,7 +61,7 @@
     document.getElementById('po-detail-due').textContent = detail.due;
     document.getElementById('po-detail-status').textContent = detail.status;
     document.getElementById('po-detail-route').textContent = detail.route;
-    document.getElementById('po-detail-milestones').innerHTML = detail.milestones.map((milestone) => `<div class="po-milestone ${milestone[3]}"><span class="po-milestone-dot"></span><div><strong>${milestone[0]}</strong><small>${milestone[1]}</small></div><time>${milestone[2]}</time></div>`).join('');
+    renderMilestones(detail.milestones);
     document.getElementById('po-detail-note').textContent = detail.note;
     panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); backdrop.classList.add('show');
   }
