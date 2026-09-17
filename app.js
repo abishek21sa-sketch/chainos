@@ -73,6 +73,48 @@ function updateFixtureHealth(fixture) {
   if (metricValues[3]?.firstChild && Number.isFinite(networkCover)) metricValues[3].firstChild.textContent = networkCover.toFixed(1);
 }
 
+function updateFixtureRecommendations(fixture) {
+  const shortage = fixture?.shortages?.[0];
+  const part = fixture?.parts?.find((entry) => entry.id === shortage?.partId);
+  const plant = fixture?.plants?.find((entry) => entry.id === shortage?.plantId);
+  const purchaseOrder = fixture?.purchaseOrders?.find((entry) => entry.partId === shortage?.partId);
+  const supplier = fixture?.suppliers?.find((entry) => entry.id === purchaseOrder?.supplierId);
+  const plannerAction = fixture?.plannerActions?.find((entry) => entry.shortageId === shortage?.id) || fixture?.plannerActions?.[0];
+  const actionPanel = document.querySelector('.action-panel');
+  if (shortage && actionPanel) {
+    const heading = actionPanel.querySelector('h2');
+    const copy = actionPanel.querySelector('.recommendation-body p');
+    const impactValues = actionPanel.querySelectorAll('.recommendation-impact b');
+    if (heading) heading.textContent = `Protect ${plant?.name || 'the active plant'}`;
+    if (copy) copy.innerHTML = `Expedite <strong>${purchaseOrder?.id || 'the active PO'}</strong> by air from ${supplier?.name || 'the supplier'}. Protects ${part?.name || 'the constrained material'} coverage before the ${shortage.daysOfSupply}-day breach.`;
+    if (impactValues[0] && Number.isFinite(Number(plannerAction?.costDelta))) impactValues[0].textContent = `+$${Number(plannerAction.costDelta).toLocaleString('en-US')}`;
+    if (impactValues[1]) impactValues[1].textContent = `${shortage.affectedHours} hrs`;
+    if (impactValues[2]) impactValues[2].textContent = `Breach in ${shortage.daysOfSupply} days`;
+  }
+  const queueItems = document.querySelectorAll('.queue-list .queue-item');
+  if (shortage && queueItems[0]) {
+    const item = queueItems[0];
+    item.querySelector('strong')?.replaceChildren(document.createTextNode(`${part?.name || shortage.partId} shortage`));
+    const copy = item.querySelector('p');
+    if (copy) copy.innerHTML = `May stop ${plant?.name || 'the active plant'} in <b>${shortage.daysOfSupply} days</b>`;
+    const meta = item.querySelectorAll('.queue-meta span');
+    if (meta[0]) meta[0].textContent = part?.partNumber || shortage.partId;
+    if (meta[2]) meta[2].textContent = purchaseOrder?.id || 'Active PO';
+  }
+  const lateShipment = fixture?.shipments?.find((entry) => entry.status === 'late');
+  const lateOrder = fixture?.purchaseOrders?.find((entry) => entry.id === lateShipment?.purchaseOrderId);
+  const lateSupplier = fixture?.suppliers?.find((entry) => entry.id === lateOrder?.supplierId);
+  if (lateShipment && queueItems[1]) {
+    const item = queueItems[1];
+    item.querySelector('strong')?.replaceChildren(document.createTextNode(`${lateSupplier?.name || 'Supplier'} shipment late`));
+    const copy = item.querySelector('p');
+    if (copy) copy.innerHTML = `ETA moved to <b>${lateShipment.eta || 'the revised date'}</b>`;
+    const meta = item.querySelectorAll('.queue-meta span');
+    if (meta[0]) meta[0].textContent = lateOrder?.id || lateShipment.purchaseOrderId;
+    if (meta[2]) meta[2].textContent = lateShipment.mode || 'Inbound';
+  }
+}
+
 const fixtures = {
   shortage: { kicker: 'CRITICAL MATERIAL', title: 'Inverter housing shortage', intro: 'A constrained component is projected to interrupt production at Northstar Austin.', material: 'MAT-2048 · Inverter housing', cover: '1.8 days cover', floor: '2.0 days', progress: '28%', plant: 'Austin · Assembly line 2', line: 'EV platform / 240 units per shift', hours: '18.4 hrs', action: 'Expedite PO-8421', actionCopy: 'Air freight 480 housings from Apex Metals. Keeps coverage above safety floor.', trace: '<div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Apex Metals confirmed</strong><small>PO-8421 · 1,200 housings</small></div><time>Sep 12</time></div><div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Shipment in transit</strong><small>SHP-8421 · truck · ETA Sep 18</small></div><time>Sep 15</time></div><div class="trace-item alert"><span class="trace-dot">!</span><div><strong>Safety floor breach projected</strong><small>MAT-2048 · Austin line 2</small></div><time>Today</time></div><div class="trace-item proposed"><span class="trace-dot">↯</span><div><strong>Expedite available</strong><small>Air freight · +$4,280 estimate</small></div><time>Next</time></div>' },
   late: { kicker: 'SHIPMENT AT RISK', title: 'Nordic Circuits shipment late', intro: 'A late inbound is compressing cover for the vehicle control unit build plan.', material: 'VCU-1190 · Vehicle control unit', cover: '4.4 days cover', floor: '5.0 days', progress: '64%', plant: 'Austin · Assembly line 1', line: 'Vehicle controls / 180 units per shift', hours: '6.0 hrs', action: 'Confirm revised ETA', actionCopy: 'Ask Nordic Circuits to confirm the Sep 19 ETA and reserve an alternate air lane.', trace: '<div class="trace-item complete"><span class="trace-dot">✓</span><div><strong>Nordic Circuits confirmed</strong><small>PO-8398 · 600 control units</small></div><time>Sep 10</time></div><div class="trace-item alert"><span class="trace-dot">!</span><div><strong>ETA slipped by 2 days</strong><small>SHP-8398 · air · now Sep 19</small></div><time>Today</time></div><div class="trace-item alert"><span class="trace-dot">!</span><div><strong>Cover approaching floor</strong><small>VCU-1190 · Austin line 1</small></div><time>+2 days</time></div><div class="trace-item proposed"><span class="trace-dot">↗</span><div><strong>Supplier confirmation needed</strong><small>Protect the alternate lane before breach</small></div><time>Next</time></div>' }
@@ -237,6 +279,7 @@ async function loadFixture() {
     document.dispatchEvent(new CustomEvent('chainos:fixture-ready', { detail: { fixture: activeFixture } }));
     updateFixtureContext(activeFixture);
     updateFixtureHealth(activeFixture);
+    updateFixtureRecommendations(activeFixture);
     syncLabel.textContent = 'Synced 2 min ago';
     syncStatus.classList.remove('fallback');
     const shortages = activeFixture.shortages || [];
@@ -267,6 +310,7 @@ document.addEventListener('chainos:fixture-import', (event) => {
   sessionStorage.setItem('chainos-imported-fixture', JSON.stringify(fixture));
   updateFixtureContext(fixture, event.detail.fileName || 'imported snapshot');
   updateFixtureHealth(fixture);
+  updateFixtureRecommendations(fixture);
   document.getElementById('sync-label').textContent = `Imported ${event.detail.fileName || 'fixture'}`;
   syncStatus.classList.remove('fallback');
   const shortages = fixture.shortages || [];
