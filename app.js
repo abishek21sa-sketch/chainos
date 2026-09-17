@@ -34,8 +34,11 @@ function updateFixtureHealth(fixture) {
   const asOf = fixture?.asOf ? new Date(fixture.asOf) : null;
   const signalCollections = ['suppliers', 'purchaseOrders', 'shipments', 'shortages', 'constraints', 'plannerActions'];
   const evaluatedSignals = signalCollections.reduce((total, key) => total + (Array.isArray(fixture?.[key]) ? fixture[key].length : 0), 0);
+  const signalCount = Number(fixture?.signalsEvaluated ?? evaluatedSignals);
   if (healthValues[0] && asOf && !Number.isNaN(asOf.getTime())) healthValues[0].textContent = asOf.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  if (healthValues[1]) healthValues[1].textContent = String(fixture?.signalsEvaluated ?? evaluatedSignals);
+  if (healthValues[1]) healthValues[1].textContent = String(signalCount);
+  const legendNote = document.querySelector('.network-legend .legend-note');
+  if (legendNote) legendNote.textContent = `Updated from ${signalCount} signals`;
 }
 
 const fixtures = {
