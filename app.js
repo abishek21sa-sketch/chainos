@@ -336,6 +336,7 @@ async function loadFixture() {
     const response = await fetch('data/fixture.json');
     if (!response.ok) throw new Error(`Fixture request failed: ${response.status}`);
     activeFixture = await response.json();
+    window.chainosFixture = activeFixture;
     document.dispatchEvent(new CustomEvent('chainos:fixture-ready', { detail: { fixture: activeFixture } }));
     updateFixtureContext(activeFixture);
     updateFixtureHealth(activeFixture);
@@ -367,6 +368,7 @@ document.addEventListener('chainos:fixture-import', (event) => {
   const fixture = event.detail?.fixture;
   if (!fixture) return;
   activeFixture = fixture;
+  window.chainosFixture = fixture;
   sessionStorage.setItem('chainos-imported-fixture', JSON.stringify(fixture));
   updateFixtureContext(fixture, event.detail.fileName || 'imported snapshot');
   updateFixtureHealth(fixture);

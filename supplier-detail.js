@@ -9,15 +9,53 @@
   const panel = document.getElementById('supplier-detail');
   const backdrop = document.getElementById('supplier-detail-backdrop');
   const closeButton = document.getElementById('supplier-detail-close');
+  function fixtureDetail(name) {
+    const fixture = window.chainosFixture;
+    const supplier = fixture?.suppliers?.find((entry) => entry.name === name || entry.id === name);
+    if (!supplier) return null;
+    const purchaseOrders = (fixture.purchaseOrders || []).filter((po) => po.supplierId === supplier.id);
+    const shipments = fixture.shipments || [];
+    const events = [];
+    purchaseOrders.slice(0, 2).forEach((po) => {
+      const quantity = Number(po.quantity);
+      const quantityLabel = Number.isFinite(quantity) ? quantity.toLocaleString('en-US') : String(po.quantity || '—');
+      events.push(['PO confirmed', `${po.id} · ${quantityLabel} units`, po.dueDate || 'Current', 'complete']);
+      const shipment = shipments.find((entry) => entry.purchaseOrderId === po.id);
+      if (shipment) {
+        const atRisk = shipment.status === 'late';
+        events.push([atRisk ? 'ETA at risk' : 'Shipment scheduled', `${shipment.id} · ${shipment.mode || 'inbound'} · ETA ${shipment.eta || 'pending'}`, shipment.eta || 'Current', atRisk ? 'alert' : 'complete']);
+      }
+    });
+    const latestShipment = shipments.find((shipment) => purchaseOrders.some((po) => po.id === shipment.purchaseOrderId));
+    const atRisk = latestShipment?.status === 'late' || supplier.status === 'watch';
+    return {
+      region: supplier.region || '—',
+      reliability: `${supplier.reliabilityScore ?? '—'}%`,
+      commitment: `${purchaseOrders.length} active PO${purchaseOrders.length === 1 ? '' : 's'}`,
+      signal: atRisk ? 'At risk' : 'On schedule',
+      note: atRisk ? `Confirm the revised ETA for ${latestShipment?.id || supplier.name}.` : 'Healthy lane with no current production constraint.',
+      events
+    };
+  }
+  function renderEvents(events) {
+    const list = document.getElementById('supplier-event-list');
+    list.replaceChildren(...events.map((event) => {
+      const wrapper = document.createElement('div'); wrapper.className = `supplier-event ${event[3]}`;
+      const dot = document.createElement('span'); dot.className = 'supplier-event-dot'; dot.textContent = event[3] === 'alert' ? '!' : '✓';
+      const info = document.createElement('div'); const title = document.createElement('strong'); title.textContent = event[0]; const description = document.createElement('small'); description.textContent = event[1]; info.append(title, description);
+      const time = document.createElement('time'); time.textContent = event[2];
+      wrapper.append(dot, info, time); return wrapper;
+    }));
+  }
   function close() { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); backdrop.classList.remove('show'); }
   function open(name) {
-    const detail = details[name] || details['Apex Metals'];
+    const detail = fixtureDetail(name) || details[name] || details['Apex Metals'];
     document.getElementById('supplier-detail-title').textContent = name;
     document.getElementById('supplier-detail-region').textContent = detail.region;
     document.getElementById('supplier-detail-reliability').textContent = detail.reliability;
     document.getElementById('supplier-detail-signal').textContent = detail.signal;
     document.getElementById('supplier-detail-commitment').textContent = detail.commitment;
-    document.getElementById('supplier-event-list').innerHTML = detail.events.map((event) => `<div class="supplier-event ${event[3]}"><span class="supplier-event-dot">${event[3] === 'alert' ? '!' : '✓'}</span><div><strong>${event[0]}</strong><small>${event[1]}</small></div><time>${event[2]}</time></div>`).join('');
+    renderEvents(detail.events);
     document.getElementById('supplier-detail-note').textContent = detail.note;
     panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); backdrop.classList.add('show');
   }
