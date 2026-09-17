@@ -49,8 +49,19 @@ function updateFixtureHealth(fixture) {
   const metricValues = document.querySelectorAll('.metric-grid .metric-value');
   const exposureHours = (fixture?.shortages || []).reduce((total, shortage) => total + (Number(shortage.affectedHours) || 0), 0);
   const lateShipments = (fixture?.shipments || []).filter((shipment) => shipment.status === 'late').length;
+  const coverSamples = (fixture?.inventoryPositions || []).map((position) => {
+    const demand = (fixture?.demandSignals || []).find((signal) => signal.plantId === position.plantId && signal.partId === position.partId);
+    if (!demand || !Number.isFinite(Number(demand.quantity))) return null;
+    const [start, end] = String(demand.period || '').split('/').map((value) => new Date(value));
+    const periodDays = start && end && !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) ? Math.max(1, Math.round((end - start) / 86400000) + 1) : 1;
+    const dailyDemand = Number(demand.quantity) / periodDays;
+    const available = Number(position.onHand) - Number(position.allocated || 0);
+    return dailyDemand > 0 ? available / dailyDemand : null;
+  }).filter((value) => Number.isFinite(value));
+  const networkCover = Number(fixture?.networkCoverDays) || (coverSamples.length ? coverSamples.reduce((total, value) => total + value, 0) / coverSamples.length : null);
   if (metricValues[1]?.firstChild) metricValues[1].firstChild.textContent = exposureHours.toFixed(1);
   if (metricValues[2]) metricValues[2].textContent = String(lateShipments).padStart(2, '0');
+  if (metricValues[3]?.firstChild && Number.isFinite(networkCover)) metricValues[3].firstChild.textContent = networkCover.toFixed(1);
 }
 
 const fixtures = {
