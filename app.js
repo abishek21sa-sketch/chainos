@@ -335,7 +335,7 @@ async function loadFixture() {
     const footer = document.querySelector('.footer-note span');
     if (footer && activeFixture.workspace) footer.textContent = `ChainOS Phase 1 · ${activeFixture.workspace} fixture`;
     const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-    if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); }
+    if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); refreshSecondaryInsights(activeView, activeFixture); }
   } catch (error) {
     // The page remains usable when opened directly from disk; the visible defaults are the same fixture values.
     syncLabel.textContent = 'Demo fixture inline';
@@ -366,7 +366,7 @@ document.addEventListener('chainos:fixture-import', (event) => {
   const footer = document.querySelector('.footer-note span');
   if (footer && fixture.workspace) footer.textContent = `ChainOS Phase 2 · ${fixture.workspace} import`;
   const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-  if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, fixture); }
+  if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, fixture); refreshSecondaryInsights(activeView, fixture); }
   showToast(`Imported ${event.detail.fileName || 'fixture'} — ${fixture.suppliers.length} suppliers, ${fixture.purchaseOrders.length} POs.`);
 });
 
@@ -527,6 +527,40 @@ function refreshMaterialTable(view, fixture) {
   body.replaceChildren(...rows);
 }
 
+function refreshSecondaryInsights(view, fixture) {
+  const host = document.getElementById('secondary-view');
+  if (!host || !fixture) return;
+  if (view === 'suppliers') {
+    const supplier = fixture.suppliers?.find((entry) => entry.status !== 'healthy') || fixture.suppliers?.[0];
+    const purchaseOrder = fixture.purchaseOrders?.find((entry) => entry.supplierId === supplier?.id);
+    const shipment = fixture.shipments?.find((entry) => entry.purchaseOrderId === purchaseOrder?.id);
+    const heading = host.querySelector('.insight-panel h2');
+    const calloutTitle = host.querySelector('.view-callout strong');
+    const calloutCopy = host.querySelector('.view-callout p');
+    if (heading && supplier) heading.textContent = `${supplier.name} needs a plan`;
+    if (calloutTitle && supplier) calloutTitle.textContent = `${supplier.name} · ${supplier.reliabilityScore ?? '—'}% reliability`;
+    if (calloutCopy && purchaseOrder) calloutCopy.textContent = `${purchaseOrder.id} is ${shipment?.status === 'late' ? `late with ETA ${shipment.eta || 'pending'}` : `due ${purchaseOrder.dueDate}`}. Review the inbound before the next planning run.`;
+  }
+  if (view === 'purchase-orders' || view === 'logistics') {
+    const cards = host.querySelectorAll('.mini-insight');
+    (fixture.purchaseOrders || []).slice(0, 2).forEach((purchaseOrder, index) => {
+      const card = cards[index];
+      if (!card) return;
+      const supplier = fixture.suppliers?.find((entry) => entry.id === purchaseOrder.supplierId);
+      const shipment = fixture.shipments?.find((entry) => entry.purchaseOrderId === purchaseOrder.id);
+      card.hidden = false;
+      card.querySelector('.mini-insight-top strong')?.replaceChildren(document.createTextNode(`${purchaseOrder.id} · ${supplier?.name || 'Supplier'}`));
+      const status = card.querySelector('.mini-insight-top span');
+      if (status) {
+        status.textContent = shipment?.status === 'late' ? 'Late' : shipment?.status === 'in-transit' ? 'In transit' : purchaseOrder.status || 'Open';
+        status.className = shipment?.status === 'late' ? 'critical-text' : '';
+      }
+      card.querySelector('p')?.replaceChildren(document.createTextNode(shipment?.status === 'late' ? `ETA moved to ${shipment.eta || 'the revised date'}. Review the inbound before the next planning run.` : `${purchaseOrder.quantity?.toLocaleString?.('en-US') || purchaseOrder.quantity} units due ${purchaseOrder.dueDate}.`));
+    });
+    for (let index = (fixture.purchaseOrders || []).slice(0, 2).length; index < cards.length; index += 1) cards[index].hidden = true;
+  }
+}
+
 function renderView(view) {
   const host = document.getElementById('secondary-view');
   if (view === 'overview') { host.classList.add('hidden'); host.innerHTML = ''; return; }
@@ -555,6 +589,7 @@ document.querySelectorAll('.nav-item').forEach((item) => item.addEventListener('
   document.querySelector('.page-content').classList.toggle('view-mode', item.dataset.view !== 'overview');
   renderView(item.dataset.view);
   refreshMaterialTable(item.dataset.view, activeFixture);
+  refreshSecondaryInsights(item.dataset.view, activeFixture);
   if (item.dataset.view !== 'overview') showToast(`${copy[0]} view selected.`);
 }));
 
