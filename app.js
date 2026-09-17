@@ -67,6 +67,25 @@ function showDrawer(type = 'shortage') {
     };
     if (plannerAction?.costDelta) item.actionCopy += ` Estimated cost delta: +$${Number(plannerAction.costDelta).toLocaleString('en-US')}.`;
   }
+  if (type === 'late' && activeFixture?.shipments?.length) {
+    const shipment = activeFixture.shipments.find((entry) => entry.status === 'late') || activeFixture.shipments[0];
+    const purchaseOrder = activeFixture.purchaseOrders?.find((entry) => entry.id === shipment.purchaseOrderId);
+    const supplier = activeFixture.suppliers?.find((entry) => entry.id === purchaseOrder?.supplierId);
+    const part = activeFixture.parts?.find((entry) => entry.id === purchaseOrder?.partId);
+    const relatedShortage = activeFixture.shortages?.find((entry) => entry.partId === purchaseOrder?.partId);
+    const plant = activeFixture.plants?.find((entry) => entry.id === relatedShortage?.plantId);
+    const eta = shipment.eta ? new Date(shipment.eta).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'the revised date';
+    item = {
+      ...item,
+      title: `${supplier?.name || 'Supplier'} shipment late`,
+      intro: `A late inbound is compressing cover for the ${part?.name || purchaseOrder?.partId || 'active material'} build plan.`,
+      material: `${part?.partNumber || purchaseOrder?.partId || item.material.split(' · ')[0]} · ${part?.name || 'Vehicle control unit'}`,
+      cover: relatedShortage ? `${relatedShortage.daysOfSupply} days cover` : item.cover,
+      plant: plant?.name || item.plant,
+      hours: relatedShortage ? `${relatedShortage.affectedHours} hrs` : item.hours,
+      actionCopy: `${supplier?.name || 'Supplier'} should confirm the ${eta} ETA and reserve an alternate lane.`
+    };
+  }
   activeDrawerType = type;
   document.dispatchEvent(new CustomEvent('chainos:drawer-open', { detail: { type } }));
   document.getElementById('drawer-kicker').textContent = item.kicker;
