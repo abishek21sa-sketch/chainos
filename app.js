@@ -335,7 +335,7 @@ async function loadFixture() {
     const footer = document.querySelector('.footer-note span');
     if (footer && activeFixture.workspace) footer.textContent = `ChainOS Phase 1 · ${activeFixture.workspace} fixture`;
     const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-    if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); refreshSecondaryInsights(activeView, activeFixture); }
+    if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); refreshSecondaryInsights(activeView, activeFixture); refreshConstraintTable(activeView, activeFixture); }
   } catch (error) {
     // The page remains usable when opened directly from disk; the visible defaults are the same fixture values.
     syncLabel.textContent = 'Demo fixture inline';
@@ -366,7 +366,7 @@ document.addEventListener('chainos:fixture-import', (event) => {
   const footer = document.querySelector('.footer-note span');
   if (footer && fixture.workspace) footer.textContent = `ChainOS Phase 2 · ${fixture.workspace} import`;
   const activeView = document.querySelector('.nav-item.active')?.dataset.view;
-  if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, fixture); refreshSecondaryInsights(activeView, fixture); }
+  if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, fixture); refreshSecondaryInsights(activeView, fixture); refreshConstraintTable(activeView, fixture); }
   showToast(`Imported ${event.detail.fileName || 'fixture'} — ${fixture.suppliers.length} suppliers, ${fixture.purchaseOrders.length} POs.`);
 });
 
@@ -561,6 +561,40 @@ function refreshSecondaryInsights(view, fixture) {
   }
 }
 
+function refreshConstraintTable(view, fixture) {
+  if (view !== 'constraints' || !Array.isArray(fixture?.constraints)) return;
+  const body = document.querySelector('#secondary-view .data-table tbody');
+  if (!body) return;
+  const constraints = fixture.constraints;
+  const activeCount = constraints.filter((constraint) => Number(constraint.consumed) >= Number(constraint.capacity)).length;
+  const rows = constraints.map((constraint) => {
+    const breached = Number(constraint.consumed) >= Number(constraint.capacity);
+    const row = document.createElement('tr');
+    const name = document.createElement('td');
+    name.className = 'table-primary';
+    name.textContent = constraint.type ? `${constraint.type} availability` : constraint.id || 'Constraint';
+    const scope = document.createElement('td');
+    scope.textContent = constraint.scope || '—';
+    const consumed = document.createElement('td');
+    consumed.textContent = `${constraint.consumed ?? '—'} / ${constraint.capacity ?? '—'}`;
+    const window = document.createElement('td');
+    window.textContent = constraint.window || '—';
+    const statusCell = document.createElement('td');
+    const status = document.createElement('span');
+    status.className = `table-status ${breached ? 'critical' : 'good'}`;
+    status.textContent = breached ? 'Breaches floor' : 'Healthy';
+    statusCell.appendChild(status);
+    row.append(name, scope, consumed, window, statusCell);
+    return row;
+  });
+  body.replaceChildren(...rows);
+  const activeLabel = document.querySelector('#secondary-view .table-panel .view-header .table-status');
+  if (activeLabel) {
+    activeLabel.textContent = `${activeCount} active`;
+    activeLabel.className = `table-status ${activeCount ? 'critical' : 'good'}`;
+  }
+}
+
 function renderView(view) {
   const host = document.getElementById('secondary-view');
   if (view === 'overview') { host.classList.add('hidden'); host.innerHTML = ''; return; }
@@ -590,6 +624,7 @@ document.querySelectorAll('.nav-item').forEach((item) => item.addEventListener('
   renderView(item.dataset.view);
   refreshMaterialTable(item.dataset.view, activeFixture);
   refreshSecondaryInsights(item.dataset.view, activeFixture);
+  refreshConstraintTable(item.dataset.view, activeFixture);
   if (item.dataset.view !== 'overview') showToast(`${copy[0]} view selected.`);
 }));
 
