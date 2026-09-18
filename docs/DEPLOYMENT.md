@@ -40,7 +40,7 @@ Create a second Web Service from the same GitHub repository so the static site a
 2. Set the build command to `npm test`.
 3. Set the start command to `npm start`.
 4. Set the health check path to `/api/health`.
-5. The initial endpoints are `/api/health` and `/api/fixture`. Set `CHAINOS_ALLOWED_ORIGIN` to the Vercel site origin before connecting browser requests.
+5. The initial endpoints are `/api/health`, `/api/fixture`, and `/api/summary`. Set `CHAINOS_ALLOWED_ORIGIN` to the Vercel site origin before connecting browser requests.
 
 To connect the Vercel frontend, set the `content` value of the `chainos-api-url` meta tag in `index.html` to the Render API service URL. The browser tries that API first and falls back to the local fixture if the service is unavailable.
 
