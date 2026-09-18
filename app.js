@@ -333,16 +333,33 @@ async function loadFixture() {
     }
   }
   try {
-    const response = await fetch('data/fixture.json');
-    if (!response.ok) throw new Error(`Fixture request failed: ${response.status}`);
+    const configuredApiUrl = window.CHAINOS_API_URL || document.querySelector('meta[name="chainos-api-url"]')?.content?.trim() || localStorage.getItem('chainos-api-url') || '';
+    const apiFixtureUrl = configuredApiUrl ? `${configuredApiUrl.replace(/\/$/, '')}/api/fixture` : '';
+    const fixtureSources = apiFixtureUrl ? [{ url: apiFixtureUrl, label: 'ChainOS API' }, { url: 'data/fixture.json', label: 'fixture.json' }] : [{ url: 'data/fixture.json', label: 'fixture.json' }];
+    let response;
+    let sourceLabel = 'fixture.json';
+    let lastError;
+    for (const source of fixtureSources) {
+      try {
+        const candidate = await fetch(source.url);
+        if (!candidate.ok) throw new Error(`${source.url} returned ${candidate.status}`);
+        response = candidate;
+        sourceLabel = source.label;
+        break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    if (!response) throw lastError || new Error('No fixture source available');
     activeFixture = await response.json();
     window.chainosFixture = activeFixture;
     document.dispatchEvent(new CustomEvent('chainos:fixture-ready', { detail: { fixture: activeFixture } }));
     updateFixtureContext(activeFixture);
     updateFixtureHealth(activeFixture);
     updateFixtureRecommendations(activeFixture);
-    syncLabel.textContent = 'Synced 2 min ago';
+    syncLabel.textContent = sourceLabel === 'ChainOS API' ? 'API synced' : 'Synced 2 min ago';
     syncStatus.classList.remove('fallback');
+    document.querySelector('.sync-popover-foot').textContent = `Source: ${sourceLabel}`;
     const shortages = activeFixture.shortages || [];
     document.getElementById('sync-supplier-count').textContent = `${(activeFixture.suppliers || []).length} / ${(activeFixture.purchaseOrders || []).length}`;
     if (activeFixture.asOf) document.getElementById('sync-as-of').textContent = new Date(activeFixture.asOf).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -353,7 +370,7 @@ async function loadFixture() {
       document.getElementById('drawer-hours').textContent = `${primaryShortage.affectedHours} hrs`;
     }
     const footer = document.querySelector('.footer-note span');
-    if (footer && activeFixture.workspace) footer.textContent = `ChainOS Phase 1 · ${activeFixture.workspace} fixture`;
+    if (footer && activeFixture.workspace) footer.textContent = `ChainOS ${sourceLabel === 'ChainOS API' ? 'Phase 2' : 'Phase 1'} · ${activeFixture.workspace} ${sourceLabel === 'ChainOS API' ? 'API' : 'fixture'}`;
     const activeView = document.querySelector('.nav-item.active')?.dataset.view;
     if (activeView && activeView !== 'overview') { renderView(activeView); refreshMaterialTable(activeView, activeFixture); refreshSecondaryInsights(activeView, activeFixture); refreshConstraintTable(activeView, activeFixture); refreshScenarioWorkspace(activeView, activeFixture); updateViewHeader(activeView, activeFixture); }
   } catch (error) {
