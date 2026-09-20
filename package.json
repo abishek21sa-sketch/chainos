@@ -14,7 +14,8 @@
     "db:seed": "node --env-file-if-exists=.env scripts/seed-database.mjs",
     "db:import": "node --env-file-if-exists=.env scripts/import-snapshot.mjs",
     "db:history": "node --env-file-if-exists=.env scripts/snapshot-revisions.mjs list",
-    "db:restore": "node --env-file-if-exists=.env scripts/snapshot-revisions.mjs restore"
+    "db:restore": "node --env-file-if-exists=.env scripts/snapshot-revisions.mjs restore",
+    "db:export": "node --env-file-if-exists=.env scripts/export-snapshot.mjs"
   },
   "dependencies": {
     "pg": "^8.23.0"
