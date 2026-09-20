@@ -525,7 +525,7 @@ document.addEventListener('keydown', (event) => {
   if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
   else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 });
-document.querySelector('.icon-button:not(#notification-button)').addEventListener('click', () => showDrawer('shortage'));
+document.querySelector('.icon-button:not(#notification-button)')?.addEventListener('click', () => showDrawer('shortage'));
 document.querySelector('.network-panel .text-button').addEventListener('click', () => showToast('Network view is anchored on the active Austin constraint.'));
 
 const viewCopy = {
