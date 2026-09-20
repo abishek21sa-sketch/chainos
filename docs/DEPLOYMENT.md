@@ -8,7 +8,7 @@ Use Vercel for the first public preview. Connect the GitHub repository, set the 
 
 Use GitHub Pages when the goal is a simple portfolio URL with no additional hosting account. The workflow in `.github/workflows/deploy-pages.yml` validates the fixture, uploads the repository as a Pages artifact, and deploys on pushes to `main`. In the repository settings, set Pages to “GitHub Actions” after the first workflow run.
 
-Use Render if the project is about to grow a backend. The checked-in `render.yaml` keeps the existing static site stable. A separate Render web service can use this same repository with build command `npm test`, start command `npm start`, and health check path `/api/health`; it will run `server.mjs` and expose `/api/fixture` for the first API boundary.
+Use Render when the project needs a backend. The checked-in `render.yaml` defines both the existing static site and a separate Node API service, so they can deploy independently from the same repository.
 
 ## GitHub setup
 
@@ -27,14 +27,15 @@ Use Render if the project is about to grow a backend. The checked-in `render.yam
 
 ## Render setup
 
-1. Create a new Static Site from the Git repository, or use the Blueprint flow with `render.yaml`.
+1. Create or sync a Blueprint from the Git repository.
 2. Confirm the root directory is the folder containing `render.yaml`.
-3. The build command is `npm test`; the publish directory is `.`.
-4. Add a custom domain from the Render dashboard when ready.
+3. The Blueprint defines the existing static site and a Node web service named `chainos-api`; the API uses `npm test`, `npm start`, and `/api/health`.
+4. After the API service is created, copy its public `onrender.com` URL and set that URL in the `chainos-api-url` meta tag in `index.html`, then redeploy the Vercel frontend.
+5. Add custom domains from the Render dashboard when ready.
 
 ### Render API service
 
-Create a second Web Service from the same GitHub repository so the static site and API can deploy independently:
+If you prefer to create the API service manually rather than syncing the Blueprint:
 
 1. Choose **Web Service** rather than **Static Site**.
 2. Set the build command to `npm test`.

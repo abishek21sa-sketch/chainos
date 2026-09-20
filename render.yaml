@@ -4,3 +4,13 @@ services:
     runtime: static
     buildCommand: npm test
     staticPublishPath: .
+  - type: web
+    name: chainos-api
+    runtime: node
+    plan: free
+    buildCommand: npm test
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: CHAINOS_ALLOWED_ORIGIN
+        value: https://chainos.vercel.app
