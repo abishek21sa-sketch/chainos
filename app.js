@@ -320,13 +320,14 @@ function runScenario() {
   showToast('Scenario plan queued for planner review.');
 }
 
-async function loadFixture() {
+async function loadFixture({ ignoreSessionImport = false } = {}) {
   const syncLabel = document.getElementById('sync-label');
   syncLabel.textContent = 'Loading fixture…';
   const persistedImport = sessionStorage.getItem('chainos-imported-fixture');
-  if (persistedImport) {
+  if (persistedImport && !ignoreSessionImport) {
     try {
       document.dispatchEvent(new CustomEvent('chainos:fixture-import', { detail: { fixture: JSON.parse(persistedImport), fileName: 'session snapshot' } }));
+      window.chainosFixtureSource = 'session import';
       return;
     } catch (error) {
       sessionStorage.removeItem('chainos-imported-fixture');
@@ -353,6 +354,7 @@ async function loadFixture() {
     if (!response) throw lastError || new Error('No fixture source available');
     activeFixture = await response.json();
     window.chainosFixture = activeFixture;
+    window.chainosFixtureSource = sourceLabel;
     document.dispatchEvent(new CustomEvent('chainos:fixture-ready', { detail: { fixture: activeFixture } }));
     updateFixtureContext(activeFixture);
     updateFixtureHealth(activeFixture);
@@ -377,9 +379,11 @@ async function loadFixture() {
     // The page remains usable when opened directly from disk; the visible defaults are the same fixture values.
     syncLabel.textContent = 'Demo fixture inline';
     syncStatus.classList.add('fallback');
+    window.chainosFixtureSource = 'inline fallback';
     console.info('Using inline fixture defaults.', error.message);
   }
 }
+window.chainosReloadFixture = () => loadFixture({ ignoreSessionImport: true });
 
 document.addEventListener('chainos:fixture-import', (event) => {
   const fixture = event.detail?.fixture;

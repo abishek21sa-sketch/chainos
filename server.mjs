@@ -2,6 +2,8 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
+import { createDatabasePool } from './db/pool.mjs';
+import { createSnapshotStore, migrateSnapshotSchema, workspaceKeyFromName } from './db/postgres-store.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const fixture = JSON.parse(readFileSync(join(root, 'data', 'fixture.json'), 'utf8'));
@@ -57,15 +59,29 @@ function sendJson(response, status, payload, allowedOrigin) {
   response.end(JSON.stringify(payload));
 }
 
-export function createApiServer({ data = fixture, allowedOrigin = process.env.CHAINOS_ALLOWED_ORIGIN || '*' } = {}) {
-  const summary = summarizeFixture(data);
-  return createServer((request, response) => {
+export function createApiServer({ data = fixture, allowedOrigin = process.env.CHAINOS_ALLOWED_ORIGIN || '*', snapshotStore = null, logger = console } = {}) {
+  return createServer(async (request, response) => {
     const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
     if (request.method === 'OPTIONS') return sendJson(response, 204, {}, allowedOrigin);
     if (request.method !== 'GET') return sendJson(response, 405, { error: 'Method not allowed' }, allowedOrigin);
-    if (url.pathname === '/api/health') return sendJson(response, 200, { status: 'ok', service: 'chainos-api' }, allowedOrigin);
-    if (url.pathname === '/api/fixture') return sendJson(response, 200, data, allowedOrigin);
-    if (url.pathname === '/api/summary') return sendJson(response, 200, summary, allowedOrigin);
+    if (url.pathname === '/api/health') {
+      try {
+        if (snapshotStore) await snapshotStore.ping();
+        return sendJson(response, 200, { status: 'ok', service: 'chainos-api', dataSource: snapshotStore ? 'postgres' : 'fixture' }, allowedOrigin);
+      } catch {
+        return sendJson(response, 503, { status: 'error', service: 'chainos-api', dataSource: 'postgres' }, allowedOrigin);
+      }
+    }
+    if (url.pathname === '/api/fixture' || url.pathname === '/api/summary') {
+      try {
+        const currentData = snapshotStore ? (await snapshotStore.read()) || data : data;
+        const payload = url.pathname === '/api/fixture' ? currentData : summarizeFixture(currentData);
+        return sendJson(response, 200, payload, allowedOrigin);
+      } catch (error) {
+        logger.error('ChainOS data store request failed:', error.message);
+        return sendJson(response, 503, { error: 'Data store unavailable' }, allowedOrigin);
+      }
+    }
     return sendJson(response, 404, { error: 'Not found' }, allowedOrigin);
   });
 }
@@ -73,7 +89,25 @@ export function createApiServer({ data = fixture, allowedOrigin = process.env.CH
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const port = Number(process.env.PORT || 4173);
   const host = process.env.HOST || '0.0.0.0';
-  createApiServer().listen(port, host, () => {
-    console.log(`ChainOS API listening on ${host}:${port}`);
-  });
+  let snapshotStore = null;
+  try {
+    if (process.env.DATABASE_URL) {
+      const pool = createDatabasePool();
+      snapshotStore = createSnapshotStore(pool, process.env.CHAINOS_WORKSPACE_KEY || workspaceKeyFromName(fixture.workspace));
+      await migrateSnapshotSchema(pool);
+      if (!await snapshotStore.read()) await snapshotStore.write(fixture, 'bootstrap-fixture');
+    }
+    const server = createApiServer({ snapshotStore });
+    server.listen(port, host, () => console.log(`ChainOS API listening on ${host}:${port} (${snapshotStore ? 'postgres' : 'fixture'} data)`));
+    const shutdown = async () => {
+      await new Promise((resolveShutdown, rejectShutdown) => server.close((error) => error ? rejectShutdown(error) : resolveShutdown()));
+      await snapshotStore?.close();
+    };
+    process.once('SIGTERM', () => { void shutdown(); });
+    process.once('SIGINT', () => { void shutdown(); });
+  } catch (error) {
+    console.error(`ChainOS API startup failed: ${error.message}`);
+    await snapshotStore?.close();
+    process.exitCode = 1;
+  }
 }

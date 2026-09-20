@@ -14,3 +14,5 @@ services:
     envVars:
       - key: CHAINOS_ALLOWED_ORIGIN
         value: https://chainos.vercel.app
+      - key: DATABASE_URL
+        sync: false
