@@ -1,6 +1,6 @@
 # ChainOS deployment
 
-ChainOS can run as a static site with a bundled JSON fixture, or as an optional Node API backed by PostgreSQL workspace snapshots.
+ChainOS can run as a static demo with a bundled JSON fixture, or as a Vercel frontend connected to a Render API, Supabase Auth, and Supabase Postgres. The app remains free-tier oriented; no paid resources are provisioned by the repository's deployment files.
 
 ## Recommended path
 
@@ -45,9 +45,32 @@ To connect the Vercel frontend, enter the Render API service origin in **Data He
 
 ### PostgreSQL persistence
 
-The API uses PostgreSQL when `DATABASE_URL` is configured; otherwise it serves the bundled fixture. Choose a database with a lifetime that matches the data you intend to keep. Render's [Free Postgres expires after 30 days](https://render.com/docs/free) and its data is deleted after the grace period, so do not use it for durable workspace records. Create an appropriately persistent Render Postgres instance, then add its private connection string as `DATABASE_URL` on the API service. The API creates its snapshot table on startup and seeds the bundled fixture only when that workspace has no saved snapshot. The Blueprint intentionally does not provision a database or select a paid plan.
+The API uses PostgreSQL when `DATABASE_URL` is configured; otherwise it serves the bundled fixture. For a $0 setup, create a Supabase Free project and use its Postgres database rather than Render Free Postgres, which expires after 30 days. Supabase Free projects can pause after 7 days of inactivity, have a 500 MB database limit, and do not include automatic backups; keep periodic exports using `npm run db:export` and do not treat this as a production durability guarantee. See [Supabase Free plan limits](https://supabase.com/pricing) and [free-project pausing](https://supabase.com/docs/guides/platform/free-project-pausing).
+
+For the Render Node service, copy the connection string from the Supabase Dashboard's **Connect** panel and set it as the secret `DATABASE_URL`. A Render web service is a persistent backend; use the Supabase **Session pooler** string if the service needs IPv4 connectivity, or the direct connection if its network supports IPv6. Keep the complete string and database password in Render's environment settings only. The API creates the snapshot and membership tables on startup and seeds the bundled fixture only if the workspace has no saved snapshot.
 
 For local development, use Node.js 22.9 or newer and copy `.env.example` to `.env`; the npm scripts load that file automatically. Run `npm run db:migrate` and `npm run db:seed`. Validate an export without connecting to a database using `npm run db:validate -- path/to/snapshot.json`, then import it with `npm run db:import -- path/to/snapshot.json`. Export the current saved snapshot with `npm run db:export -- path/to/backup.json`; the command refuses to overwrite an existing backup. Every seed/import is stored as a revision in the history table, while the API serves the latest revision. The import/export validates IDs, references, and dates. Use `npm run db:history` to list revisions and `npm run db:restore -- <revision>` to restore one as a new revision. Keep the database URL out of source control and terminal transcripts.
+
+### Supabase Auth and workspace access
+
+1. Create a Supabase project on the Free plan. In **Project Settings → API Keys**, copy the Project URL and the public `publishable` key. Add these to the Render API service as `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. These are public-client values; never use a secret/service-role key in the browser or send one in chat. The legacy `anon` key is also supported for compatibility.
+2. In Supabase **Authentication → URL Configuration**, set the Site URL to `https://chainos.vercel.app` and add that exact URL to the allowed Redirect URLs. Add `http://localhost:4173/` if you will test locally. Supabase's default email provider sends the passwordless sign-in link; no separate mail service is required for this initial setup.
+3. Set `CHAINOS_ALLOWED_ORIGIN=https://chainos.vercel.app` and `CHAINOS_WORKSPACE_KEY=northstar-mobility` on Render. The Blueprint already includes these plus prompts for the database URL and Supabase public settings.
+4. Redeploy the Render API, then in ChainOS open **Data Health → Optional API Source**, connect the Render API origin, and use **Workspace Sign-In** to send yourself a magic link. `/api/auth/me` reports the signed-in identity and whether membership is assigned; the API verifies sessions against Supabase Auth rather than trusting browser claims.
+5. Grant your account the first `owner` role from the Supabase **SQL Editor** after the API is healthy and has created the fixture snapshot. Replace the email below with the address you signed in with:
+
+   ```sql
+   INSERT INTO public.chainos_workspace_memberships (workspace_key, auth_user_id, role)
+   SELECT 'northstar-mobility', id, 'owner'
+   FROM auth.users
+   WHERE lower(email) = lower('YOUR-LOGIN-EMAIL')
+   ON CONFLICT (workspace_key, auth_user_id)
+   DO UPDATE SET role = EXCLUDED.role;
+   ```
+
+   Then sign out and back in or reconnect the API. Additional users can be granted `planner` or `viewer` with the same SQL, changing the role and filtering by their email. Do not expose workspace writes or real supplier data until server-side role checks are also added to each write operation.
+
+The browser loads the official Supabase JS v2 client only after connecting to an API configured with Supabase. Email sign-in uses Supabase's `signInWithOtp`/magic-link flow; the API independently verifies each access token, then checks the membership table before returning a persisted snapshot. The public demo remains available when no protected Postgres workspace is configured. See Supabase's [JavaScript Auth reference](https://supabase.com/docs/reference/javascript/auth-signinwithotp), [redirect URL guide](https://supabase.com/docs/guides/auth/redirect-urls), [user verification reference](https://supabase.com/docs/reference/javascript/auth-getuser), and [Postgres connection guide](https://supabase.com/docs/guides/database/connecting-to-postgres).
 
 ## Before going public
 

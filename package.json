@@ -10,6 +10,7 @@
     "test": "node scripts/validate.mjs",
     "start": "node --env-file-if-exists=.env server.mjs",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate-database.mjs",
+    "db:grant-member": "node --env-file-if-exists=.env scripts/grant-workspace-member.mjs",
     "db:validate": "node scripts/validate-snapshot-file.mjs",
     "db:seed": "node --env-file-if-exists=.env scripts/seed-database.mjs",
     "db:import": "node --env-file-if-exists=.env scripts/import-snapshot.mjs",

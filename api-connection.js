@@ -31,6 +31,7 @@
       if (health.status !== 'ok') throw new Error('API health response was not valid.');
       localStorage.setItem('chainos-api-url', baseUrl);
       sessionStorage.removeItem('chainos-imported-fixture');
+      await window.chainosApiAuthInit?.(baseUrl);
       status.textContent = 'API reachable. Loading its workspace snapshot…';
       await window.chainosReloadFixture?.();
       status.textContent = window.chainosFixtureSource === 'ChainOS API' ? `Connected · ${window.chainosFixture?.workspace || 'workspace'}.` : 'API unreachable for data; using the bundled fixture fallback.';

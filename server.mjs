@@ -51,7 +51,7 @@ function summarizeFixture(data) {
 function sendJson(response, status, payload, allowedOrigin) {
   response.writeHead(status, {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Cache-Control': 'no-store',
     'Content-Type': 'application/json; charset=utf-8'
@@ -59,7 +59,96 @@ function sendJson(response, status, payload, allowedOrigin) {
   response.end(JSON.stringify(payload));
 }
 
-export function createApiServer({ data = fixture, allowedOrigin = process.env.CHAINOS_ALLOWED_ORIGIN || '*', snapshotStore = null, logger = console } = {}) {
+export function createSupabaseAuthVerifier({ supabaseUrl, anonKey, fetchImpl = fetch }) {
+  if (!supabaseUrl || !anonKey) throw new Error('Supabase URL and anon/publishable key are required.');
+  const parsedUrl = new URL(supabaseUrl);
+  const localDevelopment = ['localhost', '127.0.0.1'].includes(parsedUrl.hostname);
+  if (parsedUrl.protocol !== 'https:' && !(localDevelopment && parsedUrl.protocol === 'http:')) {
+    throw new Error('SUPABASE_URL must use HTTPS (HTTP is allowed only for localhost).');
+  }
+  const baseUrl = parsedUrl.origin;
+
+  return async function verifySupabaseAccessToken(accessToken) {
+    if (typeof accessToken !== 'string' || !accessToken || accessToken.length > 8192) return null;
+    let response;
+    try {
+      response = await fetchImpl(`${baseUrl}/auth/v1/user`, {
+        headers: { apikey: anonKey, Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+        signal: AbortSignal.timeout(5000)
+      });
+    } catch {
+      const error = new Error('Supabase Auth is temporarily unavailable.');
+      error.statusCode = 503;
+      throw error;
+    }
+    if (response.status === 401 || response.status === 403) return null;
+    if (!response.ok) {
+      const error = new Error('Supabase Auth could not verify the session.');
+      error.statusCode = 503;
+      throw error;
+    }
+    const user = await response.json();
+    return typeof user?.id === 'string' ? { id: user.id, email: typeof user.email === 'string' ? user.email : null } : null;
+  };
+}
+
+export function createApiServer({
+  data = fixture,
+  allowedOrigin = process.env.CHAINOS_ALLOWED_ORIGIN || '*',
+  snapshotStore = null,
+  membershipStore = null,
+  authVerifier = null,
+  supabaseConfig = null,
+  enforceMembership = Boolean(snapshotStore),
+  logger = console
+} = {}) {
+  const authEnabled = Boolean(supabaseConfig?.url && supabaseConfig?.anonKey && authVerifier);
+
+  async function authenticate(request, response) {
+    if (!authVerifier) {
+      sendJson(response, 503, { error: 'Supabase Auth is not configured.' }, allowedOrigin);
+      return null;
+    }
+    const authorization = request.headers.authorization || '';
+    const match = /^Bearer\s+(.+)$/i.exec(authorization);
+    if (!match || match[1].length > 8192) {
+      sendJson(response, 401, { error: 'A valid Supabase session is required.' }, allowedOrigin);
+      return null;
+    }
+    try {
+      const user = await authVerifier(match[1]);
+      if (!user?.id) {
+        sendJson(response, 401, { error: 'A valid Supabase session is required.' }, allowedOrigin);
+        return null;
+      }
+      return user;
+    } catch (error) {
+      sendJson(response, error.statusCode || 503, { error: error.statusCode === 503 ? error.message : 'Authentication service unavailable.' }, allowedOrigin);
+      return null;
+    }
+  }
+
+  async function requireWorkspaceMember(request, response) {
+    if (!enforceMembership) return true;
+    const user = await authenticate(request, response);
+    if (!user) return false;
+    if (!membershipStore) {
+      sendJson(response, 503, { error: 'Workspace access control is not ready.' }, allowedOrigin);
+      return false;
+    }
+    try {
+      const role = await membershipStore.getRole(user.id);
+      if (!role) {
+        sendJson(response, 403, { error: 'Your account does not have access to this workspace.' }, allowedOrigin);
+        return false;
+      }
+      return true;
+    } catch {
+      sendJson(response, 503, { error: 'Workspace access could not be checked.' }, allowedOrigin);
+      return false;
+    }
+  }
+
   return createServer(async (request, response) => {
     const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
     if (request.method === 'OPTIONS') return sendJson(response, 204, {}, allowedOrigin);
@@ -67,12 +156,32 @@ export function createApiServer({ data = fixture, allowedOrigin = process.env.CH
     if (url.pathname === '/api/health') {
       try {
         if (snapshotStore) await snapshotStore.ping();
-        return sendJson(response, 200, { status: 'ok', service: 'chainos-api', dataSource: snapshotStore ? 'postgres' : 'fixture' }, allowedOrigin);
+        return sendJson(response, 200, { status: 'ok', service: 'chainos-api', dataSource: snapshotStore ? 'postgres' : 'fixture', authEnabled, accessControlEnabled: enforceMembership }, allowedOrigin);
       } catch {
         return sendJson(response, 503, { status: 'error', service: 'chainos-api', dataSource: 'postgres' }, allowedOrigin);
       }
     }
+    if (url.pathname === '/api/auth/config') {
+      return sendJson(response, 200, {
+        enabled: authEnabled,
+        supabaseUrl: authEnabled ? supabaseConfig.url : null,
+        anonKey: authEnabled ? supabaseConfig.anonKey : null,
+        workspaceKey: supabaseConfig?.workspaceKey || null,
+        accessControlEnabled: enforceMembership
+      }, allowedOrigin);
+    }
+    if (url.pathname === '/api/auth/me') {
+      const user = await authenticate(request, response);
+      if (!user) return;
+      try {
+        const role = membershipStore ? await membershipStore.getRole(user.id) : null;
+        return sendJson(response, 200, { user, role, accessControlEnabled: enforceMembership }, allowedOrigin);
+      } catch {
+        return sendJson(response, 503, { error: 'Workspace access could not be checked.' }, allowedOrigin);
+      }
+    }
     if (url.pathname === '/api/fixture' || url.pathname === '/api/summary') {
+      if (!await requireWorkspaceMember(request, response)) return;
       try {
         const currentData = snapshotStore ? (await snapshotStore.read()) || data : data;
         const payload = url.pathname === '/api/fixture' ? currentData : summarizeFixture(currentData);
@@ -89,15 +198,34 @@ export function createApiServer({ data = fixture, allowedOrigin = process.env.CH
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const port = Number(process.env.PORT || 4173);
   const host = process.env.HOST || '0.0.0.0';
+  const supabaseUrl = process.env.SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+  if (Boolean(supabaseUrl) !== Boolean(supabaseAnonKey)) {
+    console.error('ChainOS API startup failed: configure both SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (legacy SUPABASE_ANON_KEY is also accepted).');
+    process.exitCode = 1;
+  }
+  if (process.exitCode) process.exit();
   let snapshotStore = null;
+  let membershipStore = null;
   try {
     if (process.env.DATABASE_URL) {
       const pool = createDatabasePool();
       snapshotStore = createSnapshotStore(pool, process.env.CHAINOS_WORKSPACE_KEY || workspaceKeyFromName(fixture.workspace));
       await migrateSnapshotSchema(pool);
       if (!await snapshotStore.read()) await snapshotStore.write(fixture, 'bootstrap-fixture');
+      const { createWorkspaceMembershipStore, migrateWorkspaceAccessSchema } = await import('./db/workspace-access-store.mjs');
+      const workspaceKey = process.env.CHAINOS_WORKSPACE_KEY || workspaceKeyFromName(fixture.workspace);
+      await migrateWorkspaceAccessSchema(pool);
+      membershipStore = createWorkspaceMembershipStore(pool, workspaceKey);
     }
-    const server = createApiServer({ snapshotStore });
+    const supabaseConfig = supabaseUrl && supabaseAnonKey ? {
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+      workspaceKey: process.env.CHAINOS_WORKSPACE_KEY || workspaceKeyFromName(fixture.workspace)
+    } : null;
+    const authVerifier = supabaseConfig ? createSupabaseAuthVerifier({ supabaseUrl: supabaseConfig.url, anonKey: supabaseConfig.anonKey }) : null;
+    if (snapshotStore && !authVerifier) console.warn('Persisted workspace reads are locked until Supabase Auth is configured.');
+    const server = createApiServer({ snapshotStore, membershipStore, authVerifier, supabaseConfig });
     server.listen(port, host, () => console.log(`ChainOS API listening on ${host}:${port} (${snapshotStore ? 'postgres' : 'fixture'} data)`));
     const shutdown = async () => {
       await new Promise((resolveShutdown, rejectShutdown) => server.close((error) => error ? rejectShutdown(error) : resolveShutdown()));

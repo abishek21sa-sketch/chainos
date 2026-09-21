@@ -1,5 +1,5 @@
-const CACHE_NAME = 'chainos-shell-v1';
-const SHELL = ['./', './index.html', './data/fixture.json', './favicon.svg', './site.webmanifest'];
+const CACHE_NAME = 'chainos-shell-v2';
+const SHELL = ['./', './index.html', './data/fixture.json', './favicon.svg', './site.webmanifest', './api-connection.js', './api-connection.css', './supabase-auth.js', './supabase-auth.css'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
 });

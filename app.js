@@ -342,12 +342,21 @@ async function loadFixture({ ignoreSessionImport = false } = {}) {
     let lastError;
     for (const source of fixtureSources) {
       try {
-        const candidate = await fetch(source.url);
+        const headers = {};
+        const accessToken = await window.chainosApiAccessToken?.();
+        if (accessToken && source.label === 'ChainOS API') headers.Authorization = `Bearer ${accessToken}`;
+        const candidate = await fetch(source.url, { headers });
+        if (candidate.status === 401 || candidate.status === 403) {
+          const error = new Error(candidate.status === 403 ? 'This account does not have access to the connected workspace.' : 'Sign in to access the connected workspace.');
+          error.authRequired = true;
+          throw error;
+        }
         if (!candidate.ok) throw new Error(`${source.url} returned ${candidate.status}`);
         response = candidate;
         sourceLabel = source.label;
         break;
       } catch (error) {
+        if (error.authRequired) throw error;
         lastError = error;
       }
     }
@@ -380,7 +389,11 @@ async function loadFixture({ ignoreSessionImport = false } = {}) {
     syncLabel.textContent = 'Demo fixture inline';
     syncStatus.classList.add('fallback');
     window.chainosFixtureSource = 'inline fallback';
-    console.info('Using inline fixture defaults.', error.message);
+    if (error.authRequired) {
+      const sourceFoot = document.querySelector('.sync-popover-foot');
+      if (sourceFoot) sourceFoot.textContent = error.message;
+      syncLabel.textContent = 'Workspace sign-in required';
+    } else console.info('Using inline fixture defaults.', error.message);
   }
 }
 window.chainosReloadFixture = () => loadFixture({ ignoreSessionImport: true });
